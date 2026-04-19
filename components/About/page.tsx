@@ -12,15 +12,13 @@ export const About = () => {
 
                     <div className="flex items-end p-2 md:p-5 w-full xl:w-auto justify-center">
                         <img className="block h-64 md:h-100 object-cover rounded-l-sm" src="https://res.cloudinary.com/dqtlqvhw5/image/upload/v1748682080/Hemanth-1_ygm2qo.jpg" alt="hemanth-photo" />
-                        <button
+                        <a
+                            href="/Hemanth_Atthuluri_RESUME.pdf"
                             className="flex flex-col items-center justify-center gap-2 md:gap-3 bg-yellow-300 text-black py-2 px-1 md:py-3 md:px-2 rounded-r-sm shadow-lg cursor-pointer hover:bg-yellow-400 transition-colors h-64 md:h-30 md:rounded-none"
-                            onClick={() => {
-                                alert('Resume Downloaded Successfully')
-                            }}
                         >
                             <span className="[writing-mode:vertical-lr] rotate-180 font-bold text-sm">RESUME</span>
                             <FileText className="rotate-270" size={20} />
-                        </button>
+                        </a>
                     </div>
                     <div className="flex flex-col justify-around items-center  gap-6 md:gap-8 w-full xl:w-auto  px-4 md:px-0">
                         <div className="w-full md:w-[80vw] xl:w-[50vw]">
