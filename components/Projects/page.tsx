@@ -58,6 +58,17 @@ export const handleLiveLinks = (liveUrl?: string) => {
     return `/preview?url=${encodeURIComponent(liveUrl!.trim())}`;
 };
 
+const getPreviewHref = (project: (typeof projectsData)[number]) => {
+    const params = new URLSearchParams({
+        url: project.liveUrl.trim(),
+        title: project.title,
+        description: project.description,
+        codeUrl: project.codeUrl,
+    });
+
+    return `/preview?${params.toString()}`;
+};
+
 const requiresDirectOpen = (liveUrl?: string) => {
     if (!liveUrl) {
         return false;
@@ -117,7 +128,7 @@ function ProjectsList() {
                                 <a
                                     href={requiresDirectOpen(project.liveUrl)
                                         ? project.liveUrl
-                                        : `${handleLiveLinks(project.liveUrl)}&title=${encodeURIComponent(project.title)}`}
+                                        : getPreviewHref(project)}
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-yellow-400 hover:text-black text-white font-roboto text-[10px] sm:text-xs md:text-sm transition-colors duration-300 w-full justify-center"
                                 >
