@@ -61,7 +61,6 @@ export default function AIToolsPage(): React.JSX.Element {
                     <a
                         href={"https://hemanth-portfolio117.vercel.app/#section6"}
                         className="inline-block px-5 py-2 bg-yellow-400 text-black font-bold shadow hover:bg-yellow-500 transition-colors duration-150"
-                        target="_blank"
                         rel="noopener noreferrer"
                     >
                         &larr; Go Back to Blog
