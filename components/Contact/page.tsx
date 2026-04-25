@@ -15,7 +15,7 @@ export const Contact = () => {
                     {/* Left Column: Socials */}
                     <div className="flex flex-col gap-10">
                         <h1 className="text-4xl md:text-7xl font-bold leading-tight tracking-tight uppercase">
-                            Let's build <br /> something <span className="text-yellow-400">great.</span>
+                            Let&apos;s build <br /> something <span className="text-yellow-400">great.</span>
                         </h1>
 
                         <div className="flex flex-wrap gap-4 mt-8">

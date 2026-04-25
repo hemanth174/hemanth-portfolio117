@@ -6,7 +6,7 @@ const blogs = [
     {
         date: "APR 2026",
         title: "Do You Want to Know More About AI Tools?",
-        link: "#"
+        link: "/aitoolspage"
     },
     {
         date: "MAR 2026",
@@ -33,11 +33,10 @@ export const Blog = () => {
                         BLOG
                     </h2>
                 </div>
-                <Link href="/aitoolspage">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
-                        {blogs.map((blog, index) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
+                    {blogs.map((blog, index) => (
+                        <Link href={blog.link} key={index} aria-label={`Read ${blog.title}`}>
                             <div
-                                key={index}
                                 className="group relative bg-zinc-900/30 p-10 rounded-2xl border border-zinc-800/50 hover:border-yellow-400 transition-all duration-500 cursor-pointer overflow-hidden shadow-2xl"
                             >
                                 <div className="absolute -inset-1 bg-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl" />
@@ -56,9 +55,9 @@ export const Blog = () => {
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                </Link>
+                        </Link>
+                    ))}
+                </div>
             </div>
         </section>
     )

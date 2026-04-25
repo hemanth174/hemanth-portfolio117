@@ -8,7 +8,18 @@ export const HomeSection = () => {
         <>
             <div className="main-container">
                 <header className="fixed z-50 flex flex-col md:flex-row justify-between items-center min-h-20 w-full bg-white/[0.03] backdrop-blur-xl text-white px-2 sm:px-6 py-4 md:py-2 border-b border-gray-500">
-                    <a href="#section1"><h1 className={`text-[2rem] font-bold text-yellow-300 ${transition} mb-3 md:mb-0`}>Hemanth Atthuluri</h1></a>
+                    <a
+                        href="#section1"
+                        aria-label="Hemanth Atthuluri home"
+                        className="group mb-3 md:mb-0 inline-flex h-12 w-12 items-center overflow-hidden rounded-full border border-yellow-300/70 bg-yellow-300 text-black shadow-[0_0_24px_rgba(250,204,21,0.18)] transition-[width,box-shadow] duration-500 ease-out hover:w-64 hover:shadow-[0_0_34px_rgba(250,204,21,0.28)] focus-visible:w-64 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-200"
+                    >
+                        <span className="grid h-12 min-w-12 place-items-center text-xl font-black tracking-tight">
+                            HA
+                        </span>
+                        <span className="whitespace-nowrap pr-3 font-mono text-lg font-bold tracking-wide opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                            Hemanth Atthuluri
+                        </span>
+                    </a>
                     <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-5 tracking-widest text-gray-400 text-[10px] sm:text-xs md:text-sm font-semibold">
                         <a href="#section2"> <p className={transition}>ABOUT</p></a>
                         <a href="#section3"> <p className={transition} >SKILLS</p> </a>
