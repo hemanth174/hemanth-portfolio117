@@ -5,9 +5,11 @@ import { Skills } from "@/components/Skills/page";
 import { Experience } from "@/components/Experience/page";
 import { Blog } from "@/components/Blog/page";
 import { Contact } from "@/components/Contact/page";
+import { VisitorTracker } from "@/components/VisitorTracker";
 export default function Home() {
   return (
     <>
+      <VisitorTracker />
       <div id="section1" className="scroll-mt-0">
         <HomeSection />
       </div>
