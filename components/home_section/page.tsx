@@ -6,7 +6,7 @@ export const HomeSection = () => {
 
     return (
         <>
-            <div className="main-container">
+            <div className="main-container ">
                 <header className="fixed z-50 flex flex-col md:flex-row justify-between items-center min-h-20 w-full bg-white/[0.03] backdrop-blur-xl text-white px-2 sm:px-6 py-4 md:py-2 border-b border-gray-500">
                     <a
                         href="#section1"
