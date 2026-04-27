@@ -6,11 +6,13 @@ import { transition } from '../Skills/page';
 import projectImg1 from '@/app/Logo_main.png';
 import projectImg2 from '@/app/Img2.png';
 import projectImg3 from '@/app/Img3.png';
+import projectImg4 from '@/app/restaurant_demo.png';
 
 const projectsData = [
     {
         id: 1,
         title: 'SyllabiQ — Exam Syllabus Tracker',
+        category: 'Personal Project',
         description:
             'A full-stack web app that helps students track their syllabus topics, monitor subject-wise progress, and count down to exam day — all in one dashboard.',
         image: projectImg1.src,
@@ -20,6 +22,7 @@ const projectsData = [
     {
         id: 2,
         title: 'HOAS — Hostel Operational Accountability System',
+        category: 'StartUp',
         description:
             'A full-stack web platform that streamlines hostel operations by enabling complaint tracking, role-based management, and real-time accountability between students, wardens, and management.',
         image: projectImg2.src,
@@ -29,11 +32,22 @@ const projectsData = [
     {
         id: 3,
         title: 'LLM Student Assistant — AI Study Companion',
+        category: 'Personal Project',
         description:
             'LLM-based student assistant deployed on Hugging Face Spaces that delivers real-time answers, explanations, and learning support using natural language interaction.',
         image: projectImg3.src,
         codeUrl: 'https://huggingface.co/spaces/Hemanth789/LLM_student_assisstant/tree/main',
         liveUrl: 'https://huggingface.co/spaces/Hemanth789/LLM_student_assisstant',
+    },
+    {
+        id: 4,
+        title: 'Ember & Oak — Fine Dining Restaurant',
+        category: 'Freelance Project',
+        description:
+            'A premium fine-dining restaurant website featuring an elegant menu, booking integration, and a sophisticated aesthetic. Built as a freelance demo to showcase high-end UI/UX.',
+        image: projectImg4.src,
+        codeUrl: 'https://github.com/hemanth174/restaurant-client.git',
+        liveUrl: 'https://restaurant-demo117.netlify.app/',
     },
 ];
 
@@ -92,7 +106,14 @@ function ProjectsList() {
                         key={project.id}
                         className="group flex flex-col h-[350px] bg-zinc-750 border-t-3 border-yellow-300 rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_0_30px_rgba(255,221,0,0.15)] transition-all duration-300"
                     >
-                        <div className="w-full h-40 flex items-center justify-center overflow-hidden bg-black/40">
+                        <div className="relative w-full h-40 flex items-center justify-center overflow-hidden bg-black/40">
+                            {/* Category Badge - Appears on Hover */}
+                            <div className="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-[-10px] group-hover:translate-y-0">
+                                <span className="px-3 py-1 bg-yellow-300 text-black text-[10px] font-bold rounded-full shadow-lg uppercase tracking-widest border border-black/10">
+                                    {project.category}
+                                </span>
+                            </div>
+
                             {project.image ? (
                                 <img
                                     className="p-1 rounded-xl object-contain w-full h-full group-hover:scale-105 transition-transform duration-500"
