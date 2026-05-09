@@ -100,7 +100,7 @@ function ProjectsList() {
     return (
         <section id="section4" className="min-h-screen bg-black px-6 md:px-10 pt-24 pb-10">
             <h1 className={`tracking-widest text-4xl font-roboto text-yellow-300 font-bold ${transition}`}>PROJECTS</h1>
-            <div className="felx items-center grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 mt-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 mt-10">
                 {projectsData.map((project) => (
                     <div
                         key={project.id}
