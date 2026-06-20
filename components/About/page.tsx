@@ -11,7 +11,7 @@ export const About = () => {
                 <div className="font-mono flex flex-col xl:flex-row items-center justify-center gap-10 xl:gap-16 w-full">
 
                     <div className="flex items-end p-2 md:p-5 w-full xl:w-auto justify-center">
-                        <img className="block h-64 md:h-100 object-cover rounded-l-sm" src="https://res.cloudinary.com/dqtlqvhw5/image/upload/v1748682080/Hemanth-1_ygm2qo.jpg" alt="hemanth-photo" />
+                        <img className="block h-64 md:h-100 object-cover rounded-l-sm" src="https://res.cloudinary.com/dqtlqvhw5/image/upload/v1781927873/Hemnath_img_yshhlo.png" alt="hemanth-photo" />
                         <a
                             href="/Hemanth_Atthuluri_RESUME.pdf"
                             className="flex flex-col items-center justify-center gap-2 md:gap-3 bg-yellow-300 text-black py-2 px-1 md:py-3 md:px-2 rounded-r-sm shadow-lg cursor-pointer hover:bg-yellow-400 transition-colors h-64 md:h-30 md:rounded-none"
