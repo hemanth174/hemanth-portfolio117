@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { transition } from '../Skills/page';
 
@@ -72,7 +73,7 @@ export const handleLiveLinks = (liveUrl?: string) => {
     return `/preview?url=${encodeURIComponent(liveUrl!.trim())}`;
 };
 
-const getPreviewHref = (project: (typeof projectsData)[number]) => {
+const getPreviewHref = (project: { title: string; description: string; codeUrl: string; liveUrl: string }) => {
     const params = new URLSearchParams({
         url: project.liveUrl.trim(),
         title: project.title,
@@ -97,13 +98,32 @@ const requiresDirectOpen = (liveUrl?: string) => {
 };
 
 function ProjectsList() {
+    const [projects, setProjects] = useState<any[]>(projectsData);
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            try {
+                const res = await fetch('/api/projects');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.projects && data.projects.length > 0) {
+                        setProjects(data.projects);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch dynamic projects:", err);
+            }
+        };
+        fetchProjects();
+    }, []);
+
     return (
         <section id="section4" className="min-h-screen bg-black px-6 md:px-10 pt-24 pb-10">
             <h1 className={`tracking-widest text-4xl font-roboto text-yellow-300 font-bold ${transition}`}>PROJECTS</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 mt-10">
-                {projectsData.map((project) => (
+                {projects.map((project) => (
                     <div
-                        key={project.id}
+                        key={project._id || project.id}
                         className="group flex flex-col h-[350px] bg-zinc-750 border-t-3 border-yellow-300 rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_0_30px_rgba(255,221,0,0.15)] transition-all duration-300"
                     >
                         <div className="relative w-full h-40 flex items-center justify-center overflow-hidden bg-black/40">

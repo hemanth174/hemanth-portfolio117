@@ -72,7 +72,7 @@ export default function AdminDashboard() {
     const [adminKey, setAdminKey] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isCheckingSession, setIsCheckingSession] = useState(true);
-    const [activeTab, setActiveTab] = useState<'contacts' | 'visitors'>('contacts');
+    const [activeTab, setActiveTab] = useState<'contacts' | 'visitors' | 'projects'>('contacts');
     const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Contact state
@@ -82,6 +82,38 @@ export default function AdminDashboard() {
     // Visitor state
     const [visitorStats, setVisitorStats] = useState<VisitorStats | null>(null);
     const [visitorsLoading, setVisitorsLoading] = useState(false);
+
+    // Project state
+    const [projects, setProjects] = useState<any[]>([]);
+    const [projectsLoading, setProjectsLoading] = useState(false);
+    const [newProject, setNewProject] = useState({
+        title: '',
+        category: 'Personal Project',
+        description: '',
+        image: '',
+        codeUrl: '',
+        liveUrl: ''
+    });
+    const [imageType, setImageType] = useState<'upload' | 'url'>('upload');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFile = (file: File) => {
+        if (!file.type.startsWith('image/')) {
+            setError('Please upload an image file.');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            setError('Image must be less than 5MB.');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setNewProject((prev) => ({ ...prev, image: reader.result as string }));
+        };
+        reader.readAsDataURL(file);
+    };
 
     const [error, setError] = useState('');
 
@@ -163,11 +195,86 @@ export default function AdminDashboard() {
         }
     }, [adminKey]);
 
+    const fetchProjects = useCallback(async () => {
+        setProjectsLoading(true);
+        setError('');
+        try {
+            const res = await fetch('/api/projects');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to fetch projects');
+            setProjects(data.projects);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load projects');
+        } finally {
+            setProjectsLoading(false);
+        }
+    }, []);
+
+    const handleAddProject = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newProject.title.trim() || !newProject.category.trim() || !newProject.description.trim()) {
+            setError('Please fill in all required fields (Title, Category, and Description).');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setError('');
+        try {
+            const res = await fetch('/api/projects', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-admin-key': adminKey,
+                },
+                body: JSON.stringify(newProject),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to add project');
+            
+            setProjects((prev) => [data.project, ...prev]);
+            setNewProject({
+                title: '',
+                category: 'Personal Project',
+                description: '',
+                image: '',
+                codeUrl: '',
+                liveUrl: ''
+            });
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to add project');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteProject = async (id: string) => {
+        if (!window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+            return;
+        }
+
+        setError('');
+        try {
+            const res = await fetch(`/api/projects?id=${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'x-admin-key': adminKey,
+                },
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to delete project');
+
+            setProjects((prev) => prev.filter((p) => p._id !== id));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to delete project');
+        }
+    };
+
     useEffect(() => {
         if (!isAuthenticated) return;
         fetchContacts();
         fetchVisitors();
-    }, [isAuthenticated, fetchContacts, fetchVisitors]);
+        fetchProjects();
+    }, [isAuthenticated, fetchContacts, fetchVisitors, fetchProjects]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -341,7 +448,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Tab Navigation */}
-                <div className="flex gap-1 p-1 bg-zinc-900/50 rounded-xl border border-zinc-800/50 mb-8 w-fit">
+                <div className="flex flex-wrap gap-1 p-1 bg-zinc-900/50 rounded-xl border border-zinc-800/50 mb-8 w-fit">
                     <button
                         onClick={() => setActiveTab('contacts')}
                         className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
@@ -361,6 +468,16 @@ export default function AdminDashboard() {
                         }`}
                     >
                         Visitor Analytics
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('projects')}
+                        className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                            activeTab === 'projects'
+                                ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/10'
+                                : 'text-zinc-400 hover:text-white'
+                        }`}
+                    >
+                        Manage Projects
                     </button>
                 </div>
 
@@ -526,6 +643,283 @@ export default function AdminDashboard() {
                                 <p className="text-lg font-medium">No visitor data</p>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {/* Projects Tab */}
+                {activeTab === 'projects' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Projects List (left/wider) */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xl font-semibold">Current Projects</h2>
+                                <button
+                                    onClick={fetchProjects}
+                                    disabled={projectsLoading}
+                                    className="text-sm text-zinc-400 hover:text-yellow-400 transition-colors flex items-center gap-2"
+                                >
+                                    <svg className={`w-4 h-4 ${projectsLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    Refresh
+                                </button>
+                            </div>
+
+                            {projectsLoading ? (
+                                <div className="flex items-center justify-center py-20">
+                                    <div className="w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+                                </div>
+                            ) : projects.length === 0 ? (
+                                <div className="text-center py-20 text-zinc-600 bg-zinc-900/30 border border-zinc-800/50 rounded-xl">
+                                    <svg className="w-12 h-12 mx-auto mb-4 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                    <p className="text-lg font-medium">No projects found</p>
+                                    <p className="text-sm mt-1">Add projects using the form on the right.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {projects.map((project) => (
+                                        <div
+                                            key={project._id || project.id}
+                                            className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl overflow-hidden flex flex-col group hover:border-zinc-700/50 transition-all"
+                                        >
+                                            {/* Image Preview */}
+                                            <div className="relative w-full h-32 bg-black/40 flex items-center justify-center overflow-hidden">
+                                                {project.image ? (
+                                                    <img
+                                                        src={project.image}
+                                                        alt={project.title}
+                                                        className="w-full h-full object-contain p-1"
+                                                    />
+                                                ) : (
+                                                    <span className="text-zinc-600 text-xs font-mono">No Image</span>
+                                                )}
+                                                <span className="absolute top-2 right-2 px-2 py-0.5 bg-yellow-400 text-black text-[9px] font-bold rounded-full uppercase tracking-wider">
+                                                    {project.category}
+                                                </span>
+                                            </div>
+
+                                            {/* Content */}
+                                            <div className="p-4 flex-1 flex flex-col justify-between">
+                                                <div>
+                                                    <h3 className="font-bold text-white text-base group-hover:text-yellow-400 transition-colors line-clamp-1">
+                                                        {project.title}
+                                                    </h3>
+                                                    <p className="text-xs text-zinc-400 mt-1.5 line-clamp-3 leading-relaxed">
+                                                        {project.description}
+                                                    </p>
+                                                </div>
+
+                                                <div className="mt-4 pt-3 border-t border-zinc-800/50 flex items-center justify-between gap-3">
+                                                    <div className="flex gap-2 text-zinc-500">
+                                                        {project.codeUrl && (
+                                                            <a href={project.codeUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="Code Repository">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.02c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A4.8 4.8 0 0 0 8 18v4" /><path d="M12 18h-.01" /></svg>
+                                                            </a>
+                                                        )}
+                                                        {project.liveUrl && project.liveUrl !== '#' && (
+                                                            <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="Live Preview">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleDeleteProject(project._id)}
+                                                        className="px-2.5 py-1 bg-red-950/40 hover:bg-red-600 hover:text-white text-red-400 text-xs font-semibold rounded transition-all cursor-pointer"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Add Project Form (right/narrower) */}
+                        <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6 h-fit space-y-6">
+                            <div>
+                                <h2 className="text-xl font-semibold text-white">Add New Project</h2>
+                                <p className="text-zinc-500 text-xs mt-1">Publish a new project to your portfolio</p>
+                            </div>
+
+                            <form onSubmit={handleAddProject} className="space-y-4 text-sm">
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Project Title *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={newProject.title}
+                                        onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
+                                        placeholder="e.g. Portfolio Website"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Category *</label>
+                                    <select
+                                        value={newProject.category}
+                                        onChange={(e) => setNewProject({ ...newProject, category: e.target.value })}
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white outline-none focus:border-yellow-400 transition-colors cursor-pointer"
+                                    >
+                                        <option value="Personal Project">Personal Project</option>
+                                        <option value="StartUp">StartUp</option>
+                                        <option value="Freelance Project">Freelance Project</option>
+                                        <option value="Open Source">Open Source</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Description *</label>
+                                    <textarea
+                                        required
+                                        rows={4}
+                                        value={newProject.description}
+                                        onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                                        placeholder="Briefly describe the technologies used and what the project accomplishes..."
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors resize-none"
+                                    />
+                                </div>
+
+                                {/* Image inputs toggles */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Project Image</label>
+                                    <div className="flex gap-2 mb-3 bg-zinc-950 p-1 border border-zinc-800 rounded-lg">
+                                        <button
+                                            type="button"
+                                            onClick={() => { setImageType('upload'); setNewProject({ ...newProject, image: '' }); }}
+                                            className={`flex-1 py-1 rounded text-xs font-medium transition-all ${imageType === 'upload' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'}`}
+                                        >
+                                            File Upload
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setImageType('url'); setNewProject({ ...newProject, image: '' }); }}
+                                            className={`flex-1 py-1 rounded text-xs font-medium transition-all ${imageType === 'url' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'}`}
+                                        >
+                                            Image URL
+                                        </button>
+                                    </div>
+
+                                    {imageType === 'upload' ? (
+                                        <div className="space-y-3">
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) handleFile(file);
+                                                }}
+                                                className="hidden"
+                                            />
+                                            <div
+                                                onDragOver={(e) => {
+                                                    e.preventDefault();
+                                                    setIsDragging(true);
+                                                }}
+                                                onDragLeave={() => setIsDragging(false)}
+                                                onDrop={(e) => {
+                                                    e.preventDefault();
+                                                    setIsDragging(false);
+                                                    const file = e.dataTransfer.files?.[0];
+                                                    if (file) handleFile(file);
+                                                }}
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className={`relative w-full h-36 border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-4 cursor-pointer transition-all duration-300 ${
+                                                    isDragging
+                                                        ? 'border-yellow-400 bg-yellow-400/5'
+                                                        : 'border-zinc-800 bg-zinc-950 hover:border-zinc-700'
+                                                }`}
+                                            >
+                                                {newProject.image ? (
+                                                    <div className="relative w-full h-full flex items-center justify-center group/preview">
+                                                        <img
+                                                            src={newProject.image}
+                                                            alt="Preview"
+                                                            className="max-h-full max-w-full object-contain rounded-lg"
+                                                        />
+                                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/preview:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                                                            <span className="text-xs font-semibold text-yellow-400">Click or Drag to Change</span>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-center space-y-2 flex flex-col items-center">
+                                                        <svg className={`w-8 h-8 ${isDragging ? 'text-yellow-400' : 'text-zinc-500'} transition-colors duration-300`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                        </svg>
+                                                        <div>
+                                                            <p className="text-xs font-medium text-white">Drag & drop your image here</p>
+                                                            <p className="text-[10px] text-zinc-500 mt-1">or click to browse from files</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {newProject.image && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNewProject({ ...newProject, image: '' })}
+                                                    className="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1.5 cursor-pointer ml-auto"
+                                                >
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                    Remove Image
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={newProject.image}
+                                            onChange={(e) => setNewProject({ ...newProject, image: e.target.value })}
+                                            placeholder="https://example.com/image.png"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                        />
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Code URL (GitHub)</label>
+                                    <input
+                                        type="url"
+                                        value={newProject.codeUrl}
+                                        onChange={(e) => setNewProject({ ...newProject, codeUrl: e.target.value })}
+                                        placeholder="https://github.com/..."
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Live Demo URL</label>
+                                    <input
+                                        type="text"
+                                        value={newProject.liveUrl}
+                                        onChange={(e) => setNewProject({ ...newProject, liveUrl: e.target.value })}
+                                        placeholder="https://... or # if none"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="w-full bg-yellow-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-bold py-3.5 rounded-lg tracking-wider uppercase hover:bg-yellow-300 transition-all shadow-lg shadow-yellow-400/5 cursor-pointer flex items-center justify-center gap-2"
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                            Publishing...
+                                        </>
+                                    ) : (
+                                        'Publish Project'
+                                    )}
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 )}
             </main>
