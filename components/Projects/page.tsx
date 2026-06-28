@@ -101,6 +101,20 @@ function ProjectsList() {
     const [projects, setProjects] = useState<any[]>(projectsData);
 
     useEffect(() => {
+        // 1. Try to load from localStorage first for instant display
+        try {
+            const cached = localStorage.getItem('portfolio_projects_cache');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    setProjects(parsed);
+                }
+            }
+        } catch (e) {
+            console.warn("Failed to load cached projects:", e);
+        }
+
+        // 2. Fetch fresh projects in the background
         const fetchProjects = async () => {
             try {
                 const res = await fetch('/api/projects');
@@ -108,6 +122,8 @@ function ProjectsList() {
                     const data = await res.json();
                     if (data.projects && data.projects.length > 0) {
                         setProjects(data.projects);
+                        // Cache for the next visit
+                        localStorage.setItem('portfolio_projects_cache', JSON.stringify(data.projects));
                     }
                 }
             } catch (err) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -64,7 +65,14 @@ export async function GET() {
       projects = await db.collection('projects').find({}).sort({ createdAt: -1 }).toArray();
     }
 
-    return NextResponse.json({ projects });
+    return NextResponse.json(
+      { projects },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600',
+        },
+      }
+    );
   } catch (err) {
     console.error('GET Projects Error:', err);
     return NextResponse.json({ error: 'Failed to fetch projects.' }, { status: 500 });
@@ -116,6 +124,11 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await db.collection('projects').insertOne(newProject);
+    
+    // Invalidate Next.js static cache immediately
+    revalidatePath('/api/projects');
+    revalidatePath('/');
+
     return NextResponse.json({ success: true, project: { ...newProject, _id: result.insertedId } });
   } catch (err) {
     console.error('POST Projects Error:', err);
@@ -151,6 +164,10 @@ export async function DELETE(request: NextRequest) {
     if (result.deletedCount === 0) {
       return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
     }
+
+    // Invalidate Next.js static cache immediately
+    revalidatePath('/api/projects');
+    revalidatePath('/');
 
     return NextResponse.json({ success: true });
   } catch (err) {

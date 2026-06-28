@@ -203,6 +203,10 @@ export default function AdminDashboard() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to fetch projects');
             setProjects(data.projects);
+            // Sync cache
+            try {
+                localStorage.setItem('portfolio_projects_cache', JSON.stringify(data.projects));
+            } catch (e) {}
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load projects');
         } finally {
@@ -231,7 +235,14 @@ export default function AdminDashboard() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to add project');
             
-            setProjects((prev) => [data.project, ...prev]);
+            setProjects((prev) => {
+                const updated = [data.project, ...prev];
+                try {
+                    localStorage.setItem('portfolio_projects_cache', JSON.stringify(updated));
+                } catch (e) {}
+                return updated;
+            });
+
             setNewProject({
                 title: '',
                 category: 'Personal Project',
@@ -263,7 +274,13 @@ export default function AdminDashboard() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to delete project');
 
-            setProjects((prev) => prev.filter((p) => p._id !== id));
+            setProjects((prev) => {
+                const updated = prev.filter((p) => p._id !== id);
+                try {
+                    localStorage.setItem('portfolio_projects_cache', JSON.stringify(updated));
+                } catch (e) {}
+                return updated;
+            });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to delete project');
         }
