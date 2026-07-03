@@ -783,6 +783,7 @@ export default function AdminDashboard() {
                                         className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white outline-none focus:border-yellow-400 transition-colors cursor-pointer"
                                     >
                                         <option value="Personal Project">Personal Project</option>
+                                        <option value="LLM Notebook">LLM Notebook</option>
                                         <option value="StartUp">StartUp</option>
                                         <option value="Freelance Project">Freelance Project</option>
                                         <option value="Open Source">Open Source</option>
@@ -820,6 +821,12 @@ export default function AdminDashboard() {
                                             Image URL
                                         </button>
                                     </div>
+
+                                    {newProject.category === 'LLM Notebook' && (
+                                        <p className="text-[11px] leading-relaxed text-yellow-500/90 bg-yellow-500/5 border border-yellow-500/10 rounded-lg p-3 mb-3">
+                                            💡 <strong>Google Colab Theme Enabled</strong>: No image upload is needed! A beautiful Google Colab branded card banner will be generated automatically for this notebook.
+                                        </p>
+                                    )}
 
                                     {imageType === 'upload' ? (
                                         <div className="space-y-3">

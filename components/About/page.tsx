@@ -38,7 +38,7 @@ export const About = () => {
                         </div>
                         
                         <div className="flex gap-3 justify-center  w-full mt-2">
-                            <div className="flex items-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer w-full sm:w-auto justify-center">
+                            <div className="flex items-center gap-2 p-4 bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer w-full sm:w-auto justify-center">
                                 <LucideHandshake size={20} />
                                 <a
                                     href="https://www.linkedin.com/in/hemanth-atthuluri/"
@@ -47,6 +47,18 @@ export const About = () => {
                                     className="text-sm md:text-base"
                                 >
                                     Connect Via <span className="font-bold text-yellow-300 tracking-wider">LINKEDIN</span>
+                                </a>
+                            
+                            </div>
+                             <div className="flex items-center gap-2 p-4 bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer w-full sm:w-auto justify-center">
+                                <LucideHandshake size={20} />
+                                <a
+                                    href="https://github.com/hemanth174"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm md:text-base"
+                                >
+                                    Connect Via <span className="font-bold text-yellow-300 tracking-wider">GITHUB</span>
                                 </a>
                             </div>
                         </div>
