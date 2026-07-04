@@ -36,15 +36,25 @@ export const HomeSection = () => {
                         &lt;/&gt;
                     </div>
 
-                    <p className="text-sm md:text-2xl tracking-widest text-yellow-400 font-mono"><span className="tracking-widest">BSc.</span> UNDERGRADUATE · UPSKILLING AT NIAT</p>
+                    <p className="text-sm md:text-2xl tracking-widest text-yellow-400 font-mono"><span className="tracking-widest">B.Sc.</span> UNDERGRADUATE · UPSKILLING AT NIAT</p>
                     <h1 className="text-5xl sm:text-6xl md:text-8xl font-bold text-white font-mono tracking-tight overflow-hidden z-10">HEMANTH</h1>
                     <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-gray-600 leading-tight z-10">SOLVING PROBLEMS.</h1>
                     <p className="text-gray-500 w-full md:w-100 font-mono text-sm md:text-base z-10">C++ · Python · React · Node.js — turning ideas into working software.</p>
                     <div className="flex flex-col sm:flex-row gap-4 md:gap-10 font-mono w-full sm:w-auto mt-4 z-10">
-                        <button onClick={() => { router.push('/#section2') }} className="p-3 px-6 bg-yellow-300 text-black hover:bg-yellow-400 transition-colors rounded-sm cursor-pointer w-full sm:w-auto font-bold tracking-wider">
+                        <button 
+                            onClick={() => {
+                                document.getElementById('section4')?.scrollIntoView({ behavior: 'smooth' });
+                            }} 
+                            className="p-3 px-6 bg-yellow-300 text-black hover:bg-yellow-400 transition-colors rounded-sm cursor-pointer w-full sm:w-auto font-bold tracking-wider"
+                        >
                             VIEW WORK
                         </button>
-                        <button onClick={() => { router.push('/#section7') }} className="p-3 px-6 border border-gray-600 text-gray-400 hover:text-white hover:border-white transition-colors rounded-sm w-full sm:w-auto tracking-wider">
+                        <button 
+                            onClick={() => {
+                                document.getElementById('section7')?.scrollIntoView({ behavior: 'smooth' });
+                            }} 
+                            className="p-3 px-6 border border-gray-600 text-gray-400 hover:text-white hover:border-white transition-colors rounded-sm w-full sm:w-auto tracking-wider cursor-pointer font-bold"
+                        >
                             CONTACT
                         </button>
                     </div>

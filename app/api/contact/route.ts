@@ -100,6 +100,25 @@ export async function POST(request: NextRequest) {
       read: false,
     });
 
+    // Asynchronously trigger n8n workflow for auto-responder email if configured
+    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
+    if (n8nWebhookUrl) {
+      try {
+        await fetch(n8nWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email,
+            message,
+            timestamp: new Date().toISOString(),
+          }),
+        });
+      } catch (err) {
+        console.error('Failed to trigger n8n webhook:', err);
+      }
+    }
+
     return NextResponse.json({ success: true, message: 'Message sent successfully!' });
   } catch {
     return NextResponse.json({ error: 'Failed to send message. Please try again later.' }, { status: 500 });

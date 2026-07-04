@@ -17,6 +17,12 @@ export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db
 
   const client = await MongoClient.connect(MONGODB_URI);
   const db = client.db(DB_NAME);
+
+  // Asynchronously ensure database indexes exist for performance optimization
+  db.collection('projects').createIndex({ createdAt: -1 }).catch(() => {});
+  db.collection('visitors').createIndex({ visitedAt: -1 }).catch(() => {});
+  db.collection('contacts').createIndex({ createdAt: -1 }).catch(() => {});
+
   cached = { client, db };
   return cached;
 }

@@ -2,6 +2,7 @@
 import { transition } from "../Skills/page"
 import { useState } from "react"
 import { Eye, EyeClosedIcon } from "lucide-react"
+import Image from "next/image"
 type ExperienceItem = {
     title: string
     img: string
@@ -76,9 +77,11 @@ export const Experience = () => {
                         <div key={item.title} className="group relative overflow-hidden rounded-md">
                             {/* The Certificate Image */}
                             <div className="group relative overflow-hidden rounded-md">
-                                <img
+                                <Image
                                     src={item.img}
                                     alt={item.title}
+                                    width={400}
+                                    height={280}
                                     className="h-full w-full object-cover border-t-6 border-yellow-300 rounded-md transition-all duration-500 ease-out group-hover:scale-110 group-hover:-translate-y-2 group-hover:shadow-[0_20px_50px_rgba(253,224,71,0.5)]"
                                 />
                                 <button
@@ -109,9 +112,11 @@ export const Experience = () => {
                             >
                                 <EyeClosedIcon />
                             </button>
-                            <img
+                            <Image
                                 src={selectedItem.img}
                                 alt={selectedItem.title}
+                                width={1200}
+                                height={800}
                                 className="h-full w-full object-contain"
                             />
                             <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-4 text-center text-sm text-yellow-300">
