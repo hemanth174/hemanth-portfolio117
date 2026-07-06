@@ -1,8 +1,24 @@
 'use client'
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { transition } from "../Skills/page"
 export const HomeSection = () => {
     const router = useRouter();
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 80) {
+                setIsScrolled(true);
+            } else {
+                setIsScrolled(false);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        handleScroll();
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     return (
         <>
@@ -11,12 +27,20 @@ export const HomeSection = () => {
                     <a
                         href="#section1"
                         aria-label="Hemanth Atthuluri home"
-                        className="group mb-3 md:mb-0 inline-flex h-12 w-12 items-center overflow-hidden rounded-full border border-yellow-300/70 bg-yellow-300 text-black shadow-[0_0_24px_rgba(250,204,21,0.18)] transition-[width,box-shadow] duration-500 ease-out hover:w-64 hover:shadow-[0_0_34px_rgba(250,204,21,0.28)] focus-visible:w-64 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-200"
+                        className={`group mb-3 md:mb-0 inline-flex h-12 items-center overflow-hidden rounded-full border border-yellow-300/70 bg-yellow-300 text-black transition-[width,box-shadow] duration-500 ease-out ${
+                            isScrolled 
+                                ? 'w-64 shadow-[0_0_34px_rgba(250,204,21,0.28)]' 
+                                : 'w-12 hover:w-64 shadow-[0_0_24px_rgba(250,204,21,0.18)] hover:shadow-[0_0_34px_rgba(250,204,21,0.28)]'
+                        } focus-visible:w-64 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-200`}
                     >
                         <span className="grid h-12 min-w-12 place-items-center text-xl font-black tracking-tight">
                             HA
                         </span>
-                        <span className="whitespace-nowrap pr-3 font-mono text-lg font-bold tracking-wide opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        <span className={`whitespace-nowrap pr-3 font-mono text-lg font-bold tracking-wide transition-opacity duration-300 ${
+                            isScrolled 
+                                ? 'opacity-100' 
+                                : 'opacity-0 group-hover:opacity-100'
+                        }`}>
                             Hemanth Atthuluri
                         </span>
                     </a>
