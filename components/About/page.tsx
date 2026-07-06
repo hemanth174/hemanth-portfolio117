@@ -45,30 +45,25 @@ export const About = () => {
                             </span>
                         </div>
                         
-                        <div className="flex gap-3 justify-center  w-full mt-2">
-                            <div className="flex items-center gap-2 p-4 bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer w-full sm:w-auto justify-center">
-                                <LucideHandshake size={20} />
-                                <a
-                                    href="https://www.linkedin.com/in/hemanth-atthuluri/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm md:text-base"
-                                >
-                                    Connect Via <span className="font-bold text-yellow-300 tracking-wider">LINKEDIN</span>
-                                </a>
-                            
-                            </div>
-                             <div className="flex items-center gap-2 p-4 bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer w-full sm:w-auto justify-center">
-                                <LucideHandshake size={20} />
-                                <a
-                                    href="https://github.com/hemanth174"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm md:text-base"
-                                >
-                                    Connect Via <span className="font-bold text-yellow-300 tracking-wider">GITHUB</span>
-                                </a>
-                            </div>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center w-full mt-2 max-w-xs sm:max-w-none">
+                            <a
+                                href="https://www.linkedin.com/in/hemanth-atthuluri/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer w-full sm:w-auto justify-center text-xs md:text-sm font-bold font-mono text-white rounded-sm"
+                            >
+                                <LucideHandshake size={18} className="shrink-0" />
+                                <span>Connect Via <span className="font-bold text-yellow-300 tracking-wider">LINKEDIN</span></span>
+                            </a>
+                            <a
+                                href="https://github.com/hemanth174"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer w-full sm:w-auto justify-center text-xs md:text-sm font-bold font-mono text-white rounded-sm"
+                            >
+                                <LucideHandshake size={18} className="shrink-0" />
+                                <span>Connect Via <span className="font-bold text-yellow-300 tracking-wider">GITHUB</span></span>
+                            </a>
                         </div>
                     </div>
                 </div>
