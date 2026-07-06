@@ -98,7 +98,7 @@ export const Contact = () => {
                                 <label className="text-zinc-600 text-xs font-bold tracking-widest group-focus-within:text-yellow-400 transition-colors">NAME</label>
                                 <input 
                                     type="text"
-                                    value={name}
+                                    value={name || ''}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="Your Name"
                                     className="bg-transparent border-b border-zinc-800 py-3 focus:border-yellow-400 outline-none transition-all text-white placeholder:text-zinc-700" 
@@ -109,7 +109,7 @@ export const Contact = () => {
                                 <label className="text-zinc-600 text-xs font-bold tracking-widest group-focus-within:text-yellow-400 transition-colors">EMAIL</label>
                                 <input 
                                     type="email"
-                                    value={email}
+                                    value={email || ''}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="Your Email"
                                     className="bg-transparent border-b border-zinc-800 py-3 focus:border-yellow-400 outline-none transition-all text-white placeholder:text-zinc-700" 
@@ -120,7 +120,7 @@ export const Contact = () => {
                                 <label className="text-zinc-600 text-xs font-bold tracking-widest group-focus-within:text-yellow-400 transition-colors">MESSAGE</label>
                                 <textarea 
                                     rows={4}
-                                    value={message}
+                                    value={message || ''}
                                     onChange={(e) => setMessage(e.target.value)}
                                     placeholder="Tell me about your project..."
                                     className="bg-transparent border-b border-zinc-800 py-3 focus:border-yellow-400 outline-none transition-all text-white placeholder:text-zinc-700 resize-none" 

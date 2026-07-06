@@ -50,7 +50,7 @@ export const About = () => {
                                 href="https://www.linkedin.com/in/hemanth-atthuluri/"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer w-full sm:w-auto justify-center text-xs md:text-sm font-bold font-mono text-white rounded-sm"
+                                className="flex items-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer w-full sm:w-auto justify-center text-xs md:text-sm font-bold font-mono text-white"
                             >
                                 <LucideHandshake size={18} className="shrink-0" />
                                 <span>Connect Via <span className="font-bold text-yellow-300 tracking-wider">LINKEDIN</span></span>
@@ -59,7 +59,7 @@ export const About = () => {
                                 href="https://github.com/hemanth174"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer w-full sm:w-auto justify-center text-xs md:text-sm font-bold font-mono text-white rounded-sm"
+                                className="flex items-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer w-full sm:w-auto justify-center text-xs md:text-sm font-bold font-mono text-white"
                             >
                                 <LucideHandshake size={18} className="shrink-0" />
                                 <span>Connect Via <span className="font-bold text-yellow-300 tracking-wider">GITHUB</span></span>

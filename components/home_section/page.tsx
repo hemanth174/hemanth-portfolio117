@@ -69,7 +69,7 @@ export const HomeSection = () => {
                             onClick={() => {
                                 document.getElementById('section4')?.scrollIntoView({ behavior: 'smooth' });
                             }} 
-                            className="p-3 px-6 bg-yellow-300 text-black hover:bg-yellow-400 transition-colors rounded-sm cursor-pointer w-full sm:w-auto font-bold tracking-wider"
+                            className="p-3 px-6 bg-yellow-300 text-black hover:bg-yellow-400 transition-colors cursor-pointer w-full sm:w-auto font-bold tracking-wider"
                         >
                             VIEW WORK
                         </button>
@@ -77,7 +77,7 @@ export const HomeSection = () => {
                             onClick={() => {
                                 document.getElementById('section7')?.scrollIntoView({ behavior: 'smooth' });
                             }} 
-                            className="p-3 px-6 border border-gray-600 text-gray-400 hover:text-white hover:border-white transition-colors rounded-sm w-full sm:w-auto tracking-wider cursor-pointer font-bold"
+                            className="p-3 px-6 border border-gray-600 text-gray-400 hover:text-white hover:border-white transition-colors  w-full sm:w-auto tracking-wider cursor-pointer font-bold"
                         >
                             CONTACT
                         </button>

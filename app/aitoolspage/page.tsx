@@ -58,7 +58,7 @@ export default function AIToolsPage(): React.JSX.Element {
                             type="search"
                             className="border border-2 border-yellow-300 h-10 w-full font-mono px-3 bg-black text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-yellow-300"
                             placeholder="Search tools..."
-                            value={search}
+                            value={search || ''}
                             onChange={e => setSearch(e.target.value)}
                         />
                     </div>
