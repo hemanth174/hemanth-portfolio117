@@ -128,10 +128,10 @@ export const Experience = () => {
     }, [selectedIndex])
 
     return (
-        <section className="min-h-screen bg-black text-white px-6 md:px-10 py-24 font-mono">
+        <section className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white px-6 md:px-10 py-24 font-mono">
             <div className="mx-auto">
                 <div className="mb-20">
-                    <h2 className={`text-yellow-400 text-sm md:text-4xl tracking-wide font-bold flex items-center gap-4 uppercase font-roboto ${transition}`}>
+                    <h2 className={`text-amber-600 dark:text-yellow-400 text-sm md:text-4xl tracking-wide font-bold flex items-center gap-4 uppercase font-roboto ${transition}`}>
                         Certifications & Achievements
                     </h2>
                 </div>
@@ -151,7 +151,7 @@ export const Experience = () => {
                                     alt={item.title}
                                     width={400}
                                     height={280}
-                                    className="h-full w-full object-cover border-t-6 border-yellow-300 rounded-md transition-all duration-500 ease-out group-hover:scale-110 group-hover:-translate-y-2 group-hover:shadow-[0_20px_50px_rgba(253,224,71,0.5)]"
+                                    className="h-full w-full object-cover border-t-6 border-yellow-400 dark:border-yellow-300 border-x border-b border-zinc-200 dark:border-zinc-900 rounded-md transition-all duration-500 ease-out group-hover:scale-110 group-hover:-translate-y-2 group-hover:shadow-[0_20px_50px_rgba(253,224,71,0.2)] dark:group-hover:shadow-[0_20px_50px_rgba(253,224,71,0.5)]"
                                 />
                                 <button
                                     onClick={(e) => {
@@ -178,21 +178,21 @@ export const Experience = () => {
                 {selectedIndex !== null && (
                     <div 
                         onClick={() => setSelectedIndex(null)}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm"
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 dark:bg-black/95 p-4 backdrop-blur-sm"
                     >
                         <div 
                             onClick={(e) => e.stopPropagation()}
-                            className="relative max-w-5xl w-full max-h-[90vh] flex flex-col justify-between items-center rounded-3xl border-b-5 border-yellow-300 bg-zinc-950 p-6 md:p-8 shadow-2xl"
+                            className="relative max-w-5xl w-full max-h-[90vh] flex flex-col justify-between items-center rounded-3xl border border-zinc-200 dark:border-zinc-900 border-b-5 border-b-yellow-400 dark:border-b-yellow-300 bg-white dark:bg-zinc-950 p-6 md:p-8 shadow-2xl"
                         >
                             {/* Autoplay Play/Pause Toggle */}
                             <div className="absolute left-4 top-4 z-40">
                                 <button
                                     onClick={() => setModalAutoplay(!modalAutoplay)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-black/80 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white rounded-full text-[10px] font-mono transition-all cursor-pointer shadow-md"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 dark:bg-black/80 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-full text-[10px] font-mono transition-all cursor-pointer shadow-md"
                                 >
                                     {modalAutoplay ? (
                                         <>
-                                            <Pause size={10} className="text-yellow-400 fill-yellow-400 animate-pulse" />
+                                            <Pause size={10} className="text-amber-500 dark:text-yellow-400 fill-amber-500 dark:fill-yellow-400 animate-pulse" />
                                             <span>AUTOPLAY ON</span>
                                         </>
                                     ) : (
@@ -207,7 +207,7 @@ export const Experience = () => {
                             {/* Close Modal Button */}
                             <button
                                 onClick={() => setSelectedIndex(null)}
-                                className="absolute right-4 top-4 z-40 rounded-full bg-black/80 px-3.5 py-2 text-xs text-white transition hover:text-yellow-300 cursor-pointer border border-zinc-800"
+                                className="absolute right-4 top-4 z-40 rounded-full bg-zinc-100 dark:bg-black/80 px-3.5 py-2 text-xs text-zinc-700 dark:text-white transition hover:text-yellow-500 dark:hover:text-yellow-300 hover:border-yellow-450 dark:hover:border-yellow-300 cursor-pointer border border-zinc-200 dark:border-zinc-800"
                             >
                                 <EyeClosedIcon size={14} />
                             </button>
@@ -215,7 +215,7 @@ export const Experience = () => {
                             {/* Carousel Navigation Arrows */}
                             <button
                                 onClick={(e) => { e.stopPropagation(); prevCertificate(); }}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 z-40 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/75 border border-zinc-800 hover:border-yellow-300 hover:text-yellow-300 text-white cursor-pointer active:scale-95 transition-all shadow-lg"
+                                className="absolute left-4 top-1/2 -translate-y-1/2 z-40 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-zinc-100/90 dark:bg-black/75 border border-zinc-200 dark:border-zinc-800 hover:border-yellow-500 dark:hover:border-yellow-300 hover:text-yellow-500 dark:hover:text-yellow-300 text-zinc-700 dark:text-white cursor-pointer active:scale-95 transition-all shadow-lg"
                                 aria-label="Previous Certificate"
                             >
                                 <ChevronLeft size={20} />
@@ -223,7 +223,7 @@ export const Experience = () => {
 
                             <button
                                 onClick={(e) => { e.stopPropagation(); nextCertificate(); }}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 z-40 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/75 border border-zinc-800 hover:border-yellow-300 hover:text-yellow-300 text-white cursor-pointer active:scale-95 transition-all shadow-lg"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 z-40 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-zinc-100/90 dark:bg-black/75 border border-zinc-200 dark:border-zinc-800 hover:border-yellow-500 dark:hover:border-yellow-300 hover:text-yellow-500 dark:hover:text-yellow-300 text-zinc-700 dark:text-white cursor-pointer active:scale-95 transition-all shadow-lg"
                                 aria-label="Next Certificate"
                             >
                                 <ChevronRight size={20} />
@@ -236,16 +236,16 @@ export const Experience = () => {
                                     alt={experiences[selectedIndex].title}
                                     width={1200}
                                     height={800}
-                                    className="max-h-[65vh] w-full object-contain p-1"
+                                    className="max-h-[65vh] w-full object-contain p-1 border border-zinc-200/50 dark:border-transparent rounded-lg"
                                 />
                             </div>
 
                             {/* Title & Counter */}
-                            <div className="w-full text-center mt-4 border-t border-zinc-900 pt-4 flex flex-col md:flex-row justify-between items-center gap-2">
-                                <span className="text-yellow-300 text-xs font-roboto font-bold tracking-wide uppercase text-left max-w-[85%] truncate" title={experiences[selectedIndex].title}>
+                            <div className="w-full text-center mt-4 border-t border-zinc-200 dark:border-zinc-900 pt-4 flex flex-col md:flex-row justify-between items-center gap-2">
+                                <span className="text-amber-600 dark:text-yellow-300 text-xs font-roboto font-bold tracking-wide uppercase text-left max-w-[85%] truncate" title={experiences[selectedIndex].title}>
                                     {experiences[selectedIndex].title}
                                 </span>
-                                <span className="text-zinc-500 text-xs font-mono shrink-0">
+                                <span className="text-zinc-400 dark:text-zinc-500 text-xs font-mono shrink-0">
                                     {selectedIndex + 1} / {experiences.length}
                                 </span>
                             </div>

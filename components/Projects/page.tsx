@@ -151,10 +151,10 @@ function ProjectsList() {
         : [...normalProjects, ...notebookProjects];
 
     return (
-        <section id="section4" className="min-h-screen bg-black px-6 md:px-10 pt-24 pb-10">
+        <section id="section4" className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white px-6 md:px-10 pt-24 pb-10">
             {/* Header with Title and Dropdown */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 border-b border-zinc-900 pb-6">
-                <h1 className={`tracking-widest text-4xl font-roboto text-yellow-300 font-bold ${transition}`}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 border-b border-zinc-200 dark:border-zinc-900 pb-6">
+                <h1 className={`tracking-widest text-4xl font-roboto text-amber-600 dark:text-yellow-300 font-bold ${transition}`}>
                     PROJECTS
                 </h1>
                 <div className="relative z-20">
@@ -164,12 +164,12 @@ function ProjectsList() {
                             setFilter(e.target.value as 'all' | 'notebooks');
                             setShowAll(false); // Reset grid collapse on filter change
                         }}
-                        className="bg-zinc-950 border border-zinc-800 text-zinc-300 hover:text-white px-4 py-2.5 pr-9 rounded-lg text-xs font-mono font-bold tracking-wider uppercase outline-none focus:border-yellow-400 transition-all cursor-pointer appearance-none shadow-md"
+                        className="bg-white dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white px-4 py-2.5 pr-9 rounded-lg text-xs font-mono font-bold tracking-wider uppercase outline-none focus:border-yellow-400/50 dark:focus:border-yellow-450 transition-all cursor-pointer appearance-none shadow-sm"
                     >
                         <option value="all">All Projects</option>
                         <option value="notebooks">LLM Notebooks Only</option>
                     </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400 dark:text-zinc-500">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                         </svg>
@@ -187,12 +187,12 @@ function ProjectsList() {
                     return (
                         <div
                             key={project._id || project.id}
-                            className="group flex flex-col h-[350px] bg-zinc-750 border-t-3 border-yellow-300 rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_0_30px_rgba(255,221,0,0.15)] transition-all duration-300"
+                            className="group flex flex-col h-[350px] bg-white dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-900 border-t-3 border-t-yellow-400 dark:border-t-yellow-300 rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_0_30px_rgba(255,221,0,0.1)] transition-all duration-300"
                         >
-                            <div className="relative w-full h-40 flex items-center justify-center overflow-hidden bg-black/40">
+                            <div className="relative w-full h-40 flex items-center justify-center overflow-hidden bg-zinc-100 dark:bg-black/40">
                                 {/* Category Badge - Appears on Hover */}
                                 <div className="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-[-10px] group-hover:translate-y-0">
-                                    <span className="px-3 py-1 bg-yellow-300 text-black text-[10px] font-bold rounded-full shadow-lg uppercase tracking-widest border border-black/10">
+                                    <span className="px-3 py-1 bg-yellow-400 dark:bg-yellow-300 text-black text-[10px] font-bold rounded-full shadow-lg uppercase tracking-widest border border-black/10">
                                         {project.category}
                                     </span>
                                 </div>
@@ -204,30 +204,30 @@ function ProjectsList() {
                                         alt={project.title}
                                     />
                                 ) : isColab ? (
-                                    <div className="w-full h-full bg-gradient-to-br from-zinc-950 via-zinc-900 to-black flex flex-col items-center justify-center relative group-hover:scale-105 transition-transform duration-500 p-4 border border-zinc-800/40 rounded-xl">
-                                        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#f9ab00_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-                                        <svg className="w-14 h-14 filter drop-shadow-[0_0_12px_rgba(249,171,0,0.3)] z-10" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <div className="w-full h-full bg-gradient-to-br from-zinc-100 via-zinc-50 to-zinc-200 dark:from-zinc-950 dark:via-zinc-900 dark:to-black flex flex-col items-center justify-center relative group-hover:scale-105 transition-transform duration-500 p-4 border border-zinc-200 dark:border-zinc-800/40 rounded-xl">
+                                        <div className="absolute inset-0 opacity-10 dark:opacity-15 bg-[radial-gradient(#f9ab00_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+                                        <svg className="w-14 h-14 filter drop-shadow-[0_0_12px_rgba(249,171,0,0.2)] dark:drop-shadow-[0_0_12px_rgba(249,171,0,0.3)] z-10" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M24 16C19.58 16 16 19.58 16 24C16 28.42 19.58 32 24 32C26.2 32 28.2 31.1 29.66 29.66L32.48 32.48C30.28 34.68 27.3 36 24 36C17.37 36 12 30.63 12 24C12 17.37 17.37 12 24 12C27.3 12 30.28 13.32 32.48 15.52L29.66 18.34C28.2 16.9 26.2 16 24 16Z" fill="#F9AB00" />
                                             <path d="M24 32C28.42 32 32 28.42 32 24C32 19.58 28.42 16 24 16C21.8 16 19.8 16.9 18.34 18.34L15.52 15.52C17.72 13.32 20.7 12 24 12C30.63 12 36 17.37 36 24C36 30.63 30.63 36 24 36C20.7 36 17.72 34.68 15.52 32.48L18.34 29.66C19.8 31.1 21.8 32 24 32Z" fill="#E37400" />
                                         </svg>
-                                        <span className="text-[9px] font-bold text-yellow-500 uppercase tracking-[0.25em] mt-3 z-10 font-mono">
+                                        <span className="text-[9px] font-bold text-amber-600 dark:text-yellow-500 uppercase tracking-[0.25em] mt-3 z-10 font-mono">
                                             Google Colab Notebook
                                         </span>
                                     </div>
                                 ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-zinc-950 to-zinc-900 flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-800/40">
-                                        <svg className="w-10 h-10 text-zinc-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <div className="w-full h-full bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-950 dark:to-zinc-900 flex flex-col items-center justify-center p-4 rounded-xl border border-zinc-200 dark:border-zinc-800/40">
+                                        <svg className="w-10 h-10 text-zinc-400 dark:text-zinc-650 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
-                                        <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-mono">Project</span>
+                                        <span className="text-[10px] text-zinc-500 dark:text-zinc-550 uppercase tracking-wider font-mono">Project</span>
                                     </div>
                                 )}
                             </div>
                             <div className="flex flex-col flex-1 p-6 text-center">
-                                <h1 className="text-xl font-bold text-white group-hover:text-yellow-300 transition-colors mb-3 line-clamp-1" title={project.title}>
+                                <h1 className="text-xl font-bold text-zinc-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-yellow-300 transition-colors mb-3 line-clamp-1" title={project.title}>
                                     {project.title}
                                 </h1>
-                                <p className="text-sm text-gray-400 font-mono line-clamp-3" title={project.description}>
+                                <p className="text-sm text-zinc-600 dark:text-gray-400 font-mono line-clamp-3" title={project.description}>
                                     {project.description}
                                 </p>
                             </div>
@@ -237,7 +237,7 @@ function ProjectsList() {
                                         href={project.codeUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-yellow-400 hover:text-black text-white font-roboto text-[10px] sm:text-xs md:text-sm transition-colors duration-300 w-full justify-center"
+                                        className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-yellow-400 dark:hover:bg-yellow-300 text-zinc-700 dark:text-white hover:text-black dark:hover:text-black border border-zinc-200 dark:border-zinc-800 font-roboto text-[10px] sm:text-xs md:text-sm transition-colors duration-300 w-full justify-center"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.02c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A4.8 4.8 0 0 0 8 18v4" />
@@ -248,7 +248,7 @@ function ProjectsList() {
                                 ) : (
                                     <button
                                         disabled
-                                        className="flex items-center gap-2 px-4 py-2 bg-zinc-800/30 text-zinc-600 border border-zinc-800/10 font-roboto text-[10px] sm:text-xs md:text-sm cursor-not-allowed w-full justify-center"
+                                        className="flex items-center gap-2 px-4 py-2 bg-zinc-100/50 dark:bg-zinc-800/30 text-zinc-400 dark:text-zinc-650 border border-zinc-200/50 dark:border-zinc-800/10 font-roboto text-[10px] sm:text-xs md:text-sm cursor-not-allowed w-full justify-center"
                                         title="No source code link provided"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-40">
@@ -266,21 +266,21 @@ function ProjectsList() {
                                             : getPreviewHref(project)}
                                         target={requiresDirectOpen(project.liveUrl) ? "_blank" : undefined}
                                         rel="noopener noreferrer"
-                                        className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-yellow-400 hover:text-black text-white font-roboto text-[10px] sm:text-xs md:text-sm transition-colors duration-300 w-full justify-center"
+                                        className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-yellow-400 dark:hover:bg-yellow-300 text-zinc-700 dark:text-white hover:text-black dark:hover:text-black border border-zinc-200 dark:border-zinc-800 font-roboto text-[10px] sm:text-xs md:text-sm transition-colors duration-300 w-full justify-center"
                                     >
                                         <ExternalLink size={16} /> LIVE DEMO
                                     </a>
                                 ) : hasCode ? (
                                     <a
                                         href={`/testing?codeUrl=${encodeURIComponent(project.codeUrl)}`}
-                                        className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-yellow-400 hover:text-black text-white font-roboto text-[10px] sm:text-xs md:text-sm transition-colors duration-300 w-full justify-center"
+                                        className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-yellow-400 dark:hover:bg-yellow-300 text-zinc-700 dark:text-white hover:text-black dark:hover:text-black border border-zinc-200 dark:border-zinc-800 font-roboto text-[10px] sm:text-xs md:text-sm transition-colors duration-300 w-full justify-center"
                                     >
                                         <ExternalLink size={16} /> LIVE DEMO
                                     </a>
                                 ) : (
                                     <button
                                         disabled
-                                        className="flex items-center gap-2 px-4 py-2 bg-zinc-800/30 text-zinc-600 border border-zinc-800/10 font-roboto text-[10px] sm:text-xs md:text-sm cursor-not-allowed w-full justify-center"
+                                        className="flex items-center gap-2 px-4 py-2 bg-zinc-100/50 dark:bg-zinc-800/30 text-zinc-400 dark:text-zinc-650 border border-zinc-200/50 dark:border-zinc-800/10 font-roboto text-[10px] sm:text-xs md:text-sm cursor-not-allowed w-full justify-center"
                                         title="No demo link provided"
                                     >
                                         <ExternalLink size={16} className="opacity-40" /> NO DEMO
@@ -295,39 +295,39 @@ function ProjectsList() {
                 {!showAll && displayedProjects.length > 5 && (
                     <div
                         onClick={() => setShowAll(true)}
-                        className="group relative flex flex-col h-[350px] bg-zinc-900/40 border-2 border-dashed border-yellow-300/40 rounded-2xl overflow-hidden shadow-lg hover:border-yellow-300 hover:shadow-[0_0_30px_rgba(255,221,0,0.1)] transition-all duration-300 cursor-pointer justify-center items-center p-6 text-center"
+                        className="group relative flex flex-col h-[350px] bg-zinc-100 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 border-2 border-dashed rounded-2xl overflow-hidden shadow-lg hover:border-yellow-400 dark:hover:border-yellow-300 hover:shadow-[0_0_30px_rgba(255,221,0,0.1)] transition-all duration-300 cursor-pointer justify-center items-center p-6 text-center"
                     >
                         {/* Static view */}
                         <div className="flex flex-col items-center justify-center space-y-4 group-hover:scale-95 transition-transform duration-300">
-                            <div className="w-16 h-16 rounded-full bg-yellow-300/10 border border-yellow-300/20 flex items-center justify-center text-yellow-300 shadow-inner group-hover:bg-yellow-300 group-hover:text-black transition-colors duration-300">
+                            <div className="w-16 h-16 rounded-full bg-zinc-200/50 dark:bg-yellow-300/10 border border-zinc-300/60 dark:border-yellow-300/20 flex items-center justify-center text-zinc-500 dark:text-yellow-300 shadow-inner group-hover:bg-yellow-400 dark:group-hover:bg-yellow-300 group-hover:text-black transition-colors duration-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold text-white group-hover:text-yellow-300 transition-colors">
+                                <h3 className="text-xl font-bold text-zinc-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-yellow-300 transition-colors">
                                     + {displayedProjects.length - 5} More Projects
                                 </h3>
-                                <p className="text-xs text-zinc-500 mt-1 font-mono">
+                                <p className="text-xs text-zinc-500 dark:text-zinc-600 mt-1 font-mono">
                                     including LLM notebooks & works
                                 </p>
                             </div>
                         </div>
 
                         {/* Hover Overlay View */}
-                        <div className="absolute inset-0 bg-black/95 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center p-6 text-left">
-                            <p className="text-[10px] font-bold text-yellow-300 uppercase tracking-widest mb-4">Remaining Works:</p>
-                            <ul className="space-y-3 text-xs text-zinc-300 font-mono">
+                        <div className="absolute inset-0 bg-white dark:bg-black/95 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center p-6 text-left">
+                            <p className="text-[10px] font-bold text-amber-600 dark:text-yellow-300 uppercase tracking-widest mb-4">Remaining Works:</p>
+                            <ul className="space-y-3 text-xs text-zinc-650 dark:text-zinc-300 font-mono">
                                 {displayedProjects.slice(5).map((p) => (
                                     <li key={p._id || p.id} className="truncate flex items-center gap-2">
-                                        <span className="h-1.5 w-1.5 rounded-full bg-yellow-400 shrink-0" />
+                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-yellow-400 shrink-0" />
                                         <span className="truncate" title={p.title}>{p.title}</span>
                                     </li>
                                 ))}
                             </ul>
-                            <div className="mt-6 text-center border-t border-zinc-800/80 pt-4">
-                                <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-[0.2em] animate-pulse">
+                            <div className="mt-6 text-center border-t border-zinc-200 dark:border-zinc-800/80 pt-4">
+                                <span className="text-[10px] font-bold text-amber-600 dark:text-yellow-400 uppercase tracking-[0.2em] animate-pulse">
                                     Click to Expand Grid
                                 </span>
                             </div>
@@ -343,7 +343,7 @@ function ProjectsList() {
                             setShowAll(false);
                             document.getElementById('section4')?.scrollIntoView({ behavior: 'smooth' });
                         }}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-zinc-800 hover:bg-yellow-300 hover:text-black text-white font-bold font-roboto text-xs uppercase tracking-widest rounded-full transition-all duration-300 shadow-md hover:shadow-yellow-300/10 cursor-pointer"
+                        className="flex items-center gap-2 px-6 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 hover:bg-yellow-400 dark:hover:bg-yellow-300 hover:text-black dark:hover:text-black text-zinc-700 dark:text-white font-bold font-roboto text-xs uppercase tracking-widest rounded-full transition-all duration-300 shadow-md hover:shadow-yellow-350/10 cursor-pointer"
                     >
                         <svg className="rotate-180" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="6 9 12 15 18 9" />

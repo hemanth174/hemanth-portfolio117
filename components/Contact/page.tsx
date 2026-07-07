@@ -50,10 +50,10 @@ export const Contact = () => {
     };
 
     return (
-        <section id="section7" className="min-h-screen bg-black text-white px-6 md:px-10 py-24 font-mono">
+        <section id="section7" className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white px-6 md:px-10 py-24 font-mono">
             <div className="mx-auto">
                 <div className="mb-16">
-                    <h2 className={`text-yellow-400 text-sm md:text-4xl tracking-widest font-bold flex items-center gap-4 uppercase font-roboto ${transition}`}>
+                    <h2 className={`text-amber-600 dark:text-yellow-400 text-sm md:text-4xl tracking-widest font-bold flex items-center gap-4 uppercase font-roboto ${transition}`}>
                         CONTACT
                     </h2>
                 </div>
@@ -62,7 +62,7 @@ export const Contact = () => {
                     {/* Left Column: Socials */}
                     <div className="flex flex-col gap-10">
                         <h1 className="text-4xl md:text-7xl font-bold leading-tight tracking-tight uppercase">
-                            Let&apos;s build <br /> something <span className="text-yellow-400">great.</span>
+                            Let&apos;s build <br /> something <span className="text-amber-600 dark:text-yellow-400">great.</span>
                         </h1>
 
                         <div className="flex flex-wrap gap-4 mt-8">
@@ -70,7 +70,7 @@ export const Contact = () => {
                                 href="https://github.com/hemanth174" 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="hover:bg-yellow-300 px-8 py-3 text-white hover:text-black  border-2 border-yellow-400 transition-all tracking-[0.2em] font-bold text-sm hover:rounded-lg"
+                                className="hover:bg-yellow-400 dark:hover:bg-yellow-300 px-8 py-3 text-zinc-800 dark:text-white hover:text-black dark:hover:text-black border-2 border-yellow-500 dark:border-yellow-400 transition-all tracking-[0.2em] font-bold text-sm hover:rounded-lg"
                             >
                                 GITHUB
                             </a>
@@ -78,13 +78,13 @@ export const Contact = () => {
                                 href="https://www.linkedin.com/in/hemanth-atthuluri/" 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="hover:bg-yellow-300 px-8 py-3 text-white hover:text-black  border-2 border-yellow-400 transition-all tracking-[0.2em] font-bold text-sm hover:rounded-lg"
+                                className="hover:bg-yellow-400 dark:hover:bg-yellow-300 px-8 py-3 text-zinc-800 dark:text-white hover:text-black dark:hover:text-black border-2 border-yellow-500 dark:border-yellow-400 transition-all tracking-[0.2em] font-bold text-sm hover:rounded-lg"
                             >
                                 LINKEDIN
                             </a>
                             <a 
                                 href="mailto:ramasaiahemanth@gmail.com" 
-                                className="hover:bg-yellow-300 px-8 py-3 text-white hover:text-black  border-2 border-yellow-400 transition-all tracking-[0.2em] font-bold text-sm hover:rounded-lg"
+                                className="hover:bg-yellow-400 dark:hover:bg-yellow-300 px-8 py-3 text-zinc-800 dark:text-white hover:text-black dark:hover:text-black border-2 border-yellow-500 dark:border-yellow-400 transition-all tracking-[0.2em] font-bold text-sm hover:rounded-lg"
                             >
                                 EMAIL
                             </a>
@@ -92,44 +92,44 @@ export const Contact = () => {
                     </div>
 
                     {/* Right Column: Form */}
-                    <div className="bg-zinc-900/20 p-8 md:p-12 rounded-2xl border border-zinc-900 shadow-2xl">
+                    <div className="bg-white dark:bg-zinc-900/20 p-8 md:p-12 rounded-2xl border border-zinc-200 dark:border-zinc-900 shadow-md dark:shadow-2xl">
                         <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
                             <div className="flex flex-col gap-2 group">
-                                <label className="text-zinc-600 text-xs font-bold tracking-widest group-focus-within:text-yellow-400 transition-colors">NAME</label>
+                                <label className="text-zinc-500 dark:text-zinc-600 text-xs font-bold tracking-widest group-focus-within:text-amber-600 dark:group-focus-within:text-yellow-400 transition-colors">NAME</label>
                                 <input 
                                     type="text"
                                     value={name || ''}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="Your Name"
-                                    className="bg-transparent border-b border-zinc-800 py-3 focus:border-yellow-400 outline-none transition-all text-white placeholder:text-zinc-700" 
+                                    className="bg-transparent border-b border-zinc-250 dark:border-zinc-850 py-3 focus:border-amber-650 dark:focus:border-yellow-400 outline-none transition-all text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-700" 
                                 />
                             </div>
 
                             <div className="flex flex-col gap-2 group">
-                                <label className="text-zinc-600 text-xs font-bold tracking-widest group-focus-within:text-yellow-400 transition-colors">EMAIL</label>
+                                <label className="text-zinc-500 dark:text-zinc-600 text-xs font-bold tracking-widest group-focus-within:text-amber-600 dark:group-focus-within:text-yellow-400 transition-colors">EMAIL</label>
                                 <input 
                                     type="email"
                                     value={email || ''}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="Your Email"
-                                    className="bg-transparent border-b border-zinc-800 py-3 focus:border-yellow-400 outline-none transition-all text-white placeholder:text-zinc-700" 
+                                    className="bg-transparent border-b border-zinc-250 dark:border-zinc-850 py-3 focus:border-amber-650 dark:focus:border-yellow-400 outline-none transition-all text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-700" 
                                 />
                             </div>
 
                             <div className="flex flex-col gap-2 group">
-                                <label className="text-zinc-600 text-xs font-bold tracking-widest group-focus-within:text-yellow-400 transition-colors">MESSAGE</label>
+                                <label className="text-zinc-500 dark:text-zinc-600 text-xs font-bold tracking-widest group-focus-within:text-amber-600 dark:group-focus-within:text-yellow-400 transition-colors">MESSAGE</label>
                                 <textarea 
                                     rows={4}
                                     value={message || ''}
                                     onChange={(e) => setMessage(e.target.value)}
                                     placeholder="Tell me about your project..."
-                                    className="bg-transparent border-b border-zinc-800 py-3 focus:border-yellow-400 outline-none transition-all text-white placeholder:text-zinc-700 resize-none" 
+                                    className="bg-transparent border-b border-zinc-250 dark:border-zinc-850 py-3 focus:border-amber-650 dark:focus:border-yellow-400 outline-none transition-all text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-700 resize-none" 
                                 />
                             </div>
 
                             {/* Status Messages */}
                             {status === 'success' && (
-                                <div className="flex items-center gap-2 text-green-400 text-sm font-semibold animate-pulse">
+                                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-semibold animate-pulse">
                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                     </svg>
@@ -138,7 +138,7 @@ export const Contact = () => {
                             )}
 
                             {status === 'error' && (
-                                <div className="flex items-center gap-2 text-red-400 text-sm font-semibold">
+                                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm font-semibold">
                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
@@ -149,10 +149,10 @@ export const Contact = () => {
                             <button 
                                 type="submit"
                                 disabled={status === 'sending'}
-                                className={`w-full font-bold py-5 tracking-[0.3em] transition-all transform shadow-lg shadow-yellow-400/10 mt-4 uppercase ${
+                                className={`w-full font-bold py-5 tracking-[0.3em] transition-all transform shadow-lg shadow-yellow-400/5 mt-4 uppercase ${
                                     status === 'sending'
-                                        ? 'bg-yellow-300/50 text-black/50 cursor-not-allowed'
-                                        : 'bg-yellow-300 text-black hover:bg-yellow-400 hover:-translate-y-1'
+                                        ? 'bg-yellow-400/50 dark:bg-yellow-300/50 text-black/50 cursor-not-allowed'
+                                        : 'bg-yellow-400 dark:bg-yellow-300 text-black hover:bg-yellow-500 dark:hover:bg-yellow-400 hover:-translate-y-1'
                                 }`}
                             >
                                 {status === 'sending' ? (
