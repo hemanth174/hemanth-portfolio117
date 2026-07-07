@@ -108,6 +108,7 @@ const requiresDirectOpen = (liveUrl?: string) => {
 function ProjectsList() {
     const [projects, setProjects] = useState<any[]>(projectsData);
     const [showAll, setShowAll] = useState(false);
+    const [filter, setFilter] = useState<'all' | 'notebooks'>('all');
 
     useEffect(() => {
         // 1. Try to load from localStorage first for instant display
@@ -142,11 +143,42 @@ function ProjectsList() {
         fetchProjects();
     }, []);
 
+    const normalProjects = projects.filter(p => p.category !== 'LLM Notebook');
+    const notebookProjects = projects.filter(p => p.category === 'LLM Notebook');
+
+    const displayedProjects = filter === 'notebooks'
+        ? notebookProjects
+        : [...normalProjects, ...notebookProjects];
+
     return (
         <section id="section4" className="min-h-screen bg-black px-6 md:px-10 pt-24 pb-10">
-            <h1 className={`tracking-widest text-4xl font-roboto text-yellow-300 font-bold ${transition}`}>PROJECTS</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 mt-10">
-                {(showAll ? projects : projects.slice(0, 5)).map((project) => {
+            {/* Header with Title and Dropdown */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 border-b border-zinc-900 pb-6">
+                <h1 className={`tracking-widest text-4xl font-roboto text-yellow-300 font-bold ${transition}`}>
+                    PROJECTS
+                </h1>
+                <div className="relative z-20">
+                    <select
+                        value={filter}
+                        onChange={(e) => {
+                            setFilter(e.target.value as 'all' | 'notebooks');
+                            setShowAll(false); // Reset grid collapse on filter change
+                        }}
+                        className="bg-zinc-950 border border-zinc-800 text-zinc-300 hover:text-white px-4 py-2.5 pr-9 rounded-lg text-xs font-mono font-bold tracking-wider uppercase outline-none focus:border-yellow-400 transition-all cursor-pointer appearance-none shadow-md"
+                    >
+                        <option value="all">All Projects</option>
+                        <option value="notebooks">LLM Notebooks Only</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
+                {(showAll ? displayedProjects : displayedProjects.slice(0, 5)).map((project) => {
                     const isColab = project.category === 'LLM Notebook' || 
                                     (project.liveUrl && project.liveUrl.includes('colab.research.google.com'));
                     const hasCode = project.codeUrl && project.codeUrl.trim() !== '' && project.codeUrl.trim() !== '#';
@@ -260,7 +292,7 @@ function ProjectsList() {
                 })}
 
                 {/* 6th "View More" Card */}
-                {!showAll && projects.length > 5 && (
+                {!showAll && displayedProjects.length > 5 && (
                     <div
                         onClick={() => setShowAll(true)}
                         className="group relative flex flex-col h-[350px] bg-zinc-900/40 border-2 border-dashed border-yellow-300/40 rounded-2xl overflow-hidden shadow-lg hover:border-yellow-300 hover:shadow-[0_0_30px_rgba(255,221,0,0.1)] transition-all duration-300 cursor-pointer justify-center items-center p-6 text-center"
@@ -275,7 +307,7 @@ function ProjectsList() {
                             </div>
                             <div>
                                 <h3 className="text-xl font-bold text-white group-hover:text-yellow-300 transition-colors">
-                                    + {projects.length - 5} More Projects
+                                    + {displayedProjects.length - 5} More Projects
                                 </h3>
                                 <p className="text-xs text-zinc-500 mt-1 font-mono">
                                     including LLM notebooks & works
@@ -287,7 +319,7 @@ function ProjectsList() {
                         <div className="absolute inset-0 bg-black/95 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center p-6 text-left">
                             <p className="text-[10px] font-bold text-yellow-300 uppercase tracking-widest mb-4">Remaining Works:</p>
                             <ul className="space-y-3 text-xs text-zinc-300 font-mono">
-                                {projects.slice(5).map((p) => (
+                                {displayedProjects.slice(5).map((p) => (
                                     <li key={p._id || p.id} className="truncate flex items-center gap-2">
                                         <span className="h-1.5 w-1.5 rounded-full bg-yellow-400 shrink-0" />
                                         <span className="truncate" title={p.title}>{p.title}</span>
@@ -304,7 +336,7 @@ function ProjectsList() {
                 )}
             </div>
 
-            {showAll && projects.length > 5 && (
+            {showAll && displayedProjects.length > 5 && (
                 <div className="flex justify-center mt-10">
                     <button
                         onClick={() => {
