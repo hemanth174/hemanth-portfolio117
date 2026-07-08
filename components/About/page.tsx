@@ -30,7 +30,7 @@ export const About = () => {
                     </div>
                     <div className="flex flex-col justify-around items-center gap-6 md:gap-8 w-full xl:w-auto px-4 md:px-0">
                         <div className="w-full md:w-[80vw] xl:w-[50vw]">
-                            <p className="text-xl sm:text-2xl md:text-3xl text-center leading-relaxed">Student at <span className="text-amber-600 dark:text-yellow-400 font-bold">NIAT</span>, building full-stack products and experimenting with AI—focused on creating things that people actually need.</p>
+                            <p className="text-xl sm:text-2xl md:text-3xl text-center leading-relaxed">Student at <span className="text-amber-600 dark:text-yellow-400 font-bold">NIAT</span>, building full-stack products and experimenting with AI focused on creating things that people actually need.</p>
                         </div>
 
                         <div className="p-2 pt-2 md:pt-4 flex flex-wrap justify-center gap-3 md:gap-5 w-full">
@@ -53,7 +53,7 @@ export const About = () => {
                                 className="flex items-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer w-full sm:w-auto justify-center text-xs md:text-sm font-bold font-mono text-white"
                             >
                                 <LucideHandshake size={18} className="shrink-0" />
-                                <span>Connect Via <span className="font-bold text-yellow-250 dark:text-yellow-350 tracking-wider">LINKEDIN</span></span>
+                                <span>Connect Via <span className="font-bold text-yellow-500 dark:text-yellow-350 tracking-wider">LINKEDIN</span></span>
                             </a>
                             <a
                                 href="https://github.com/hemanth174"
@@ -62,7 +62,7 @@ export const About = () => {
                                 className="flex items-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer w-full sm:w-auto justify-center text-xs md:text-sm font-bold font-mono text-white"
                             >
                                 <LucideHandshake size={18} className="shrink-0" />
-                                <span>Connect Via <span className="font-bold text-yellow-250 dark:text-yellow-350 tracking-wider">GITHUB</span></span>
+                                <span>Connect Via <span className="font-bold text-yellow-250 dark:text-yellow-500 tracking-wider">GITHUB</span></span>
                             </a>
                         </div>
                     </div>

@@ -1,18 +1,42 @@
 'use client'
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import { transition } from "../Skills/page"
 import { useTheme } from "next-themes"
 import { Sun, Moon } from "lucide-react"
 
+let isHydrated = false
+const hydrationListeners = new Set<() => void>()
+
+function subscribeToHydration(listener: () => void) {
+    hydrationListeners.add(listener)
+    return () => hydrationListeners.delete(listener)
+}
+
+function getHydrationSnapshot() {
+    return isHydrated
+}
+
+function getServerHydrationSnapshot() {
+    return false
+}
+
+function markHydrated() {
+    if (isHydrated) {
+        return
+    }
+
+    isHydrated = true
+    hydrationListeners.forEach((listener) => listener())
+}
+
 export const HomeSection = () => {
-    const router = useRouter();
     const [isScrolled, setIsScrolled] = useState(false);
     const { theme, setTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
+    const hydrated = useSyncExternalStore(subscribeToHydration, getHydrationSnapshot, getServerHydrationSnapshot);
+    const isDarkTheme = hydrated ? theme === 'dark' : true;
 
     useEffect(() => {
-        setMounted(true);
+        markHydrated();
         const handleScroll = () => {
             if (window.scrollY > 80) {
                 setIsScrolled(true);
@@ -63,11 +87,11 @@ export const HomeSection = () => {
                         
                         {/* Premium Theme Toggle Button */}
                         <button
-                            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                            className="flex items-center justify-center w-8 h-8 rounded-full border border-zinc-300 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900/50 hover:border-yellow-400 dark:hover:border-yellow-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-all cursor-pointer text-zinc-500 dark:text-zinc-400 active:scale-95 shadow-sm"
-                            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                            onClick={() => setTheme(isDarkTheme ? 'light' : 'dark')}
+                            className="flex items-center justify-center w-8 h-8 border border-1 border-white bg-zinc-100 dark:bg-zinc-900/50 hover:border-yellow-400 dark:hover:border-yellow-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-all cursor-pointer text-zinc-500 dark:text-zinc-400 active:scale-95 shadow-sm"
+                            title={hydrated ? (isDarkTheme ? 'Switch to Light Mode' : 'Switch to Dark Mode') : 'Switch Theme'}
                         >
-                            {mounted && (theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />)}
+                            {hydrated && (isDarkTheme ? <Sun size={14} /> : <Moon size={14} />)}
                         </button>
                     </div>
                 </header>
