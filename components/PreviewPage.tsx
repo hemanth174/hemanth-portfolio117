@@ -197,7 +197,8 @@ export default function PreviewPage({ geminiConfigured }: PreviewPageProps) {
                       className={`w-full border-0 bg-white transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'} ${viewMode === 'mobile' ? 'h-full' : 'h-[75vh]'}`}
                       onLoad={() => setLoaded(true)}
                       onError={() => setIframeError(true)}
-                      sandbox="allow-scripts allow-same-origin allow-forms"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                      allow="microphone; camera"
                       loading="lazy"
                     />
                   </div>
@@ -234,7 +235,8 @@ export default function PreviewPage({ geminiConfigured }: PreviewPageProps) {
                       title="Project AI assistant"
                       src={assistantUrl}
                       className="h-full w-full border-0"
-                      sandbox="allow-scripts allow-same-origin allow-forms"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                      allow="microphone; camera"
                     />
                   </div>
                 </div>
