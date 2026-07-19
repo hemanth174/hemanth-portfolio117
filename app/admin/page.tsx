@@ -72,7 +72,7 @@ export default function AdminDashboard() {
     const [adminKey, setAdminKey] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isCheckingSession, setIsCheckingSession] = useState(true);
-    const [activeTab, setActiveTab] = useState<'contacts' | 'visitors' | 'projects' | 'certifications'>('contacts');
+    const [activeTab, setActiveTab] = useState<'contacts' | 'visitors' | 'projects' | 'certifications' | 'events'>('contacts');
     const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Contact state
@@ -107,6 +107,39 @@ export default function AdminDashboard() {
     const [isSubmittingCert, setIsSubmittingCert] = useState(false);
     const [isDraggingCert, setIsDraggingCert] = useState(false);
     const certFileInputRef = useRef<HTMLInputElement>(null);
+
+    // Event state
+    const [events, setEvents] = useState<any[]>([]);
+    const [eventsLoading, setEventsLoading] = useState(false);
+    const [newEvent, setNewEvent] = useState({
+        title: '',
+        type: 'college' as 'college' | 'off-college',
+        date: '',
+        description: '',
+        location: '',
+        image: '',
+        link: ''
+    });
+    const [eventImageType, setEventImageType] = useState<'upload' | 'url'>('upload');
+    const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+    const [isDraggingEvent, setIsDraggingEvent] = useState(false);
+    const eventFileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleEventFile = (file: File) => {
+        if (!file.type.startsWith('image/')) {
+            setError('Please upload an image file.');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            setError('Image must be less than 5MB.');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setNewEvent((prev) => ({ ...prev, image: reader.result as string }));
+        };
+        reader.readAsDataURL(file);
+    };
 
     const handleCertFile = (file: File) => {
         if (!file.type.startsWith('image/')) {
@@ -394,13 +427,105 @@ export default function AdminDashboard() {
         }
     };
 
+    const fetchEvents = useCallback(async () => {
+        setEventsLoading(true);
+        setError('');
+        try {
+            const res = await fetch('/api/events');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to fetch events');
+            setEvents(data.events);
+            try {
+                localStorage.setItem('portfolio_events_cache', JSON.stringify(data.events));
+            } catch (e) {}
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load events');
+        } finally {
+            setEventsLoading(false);
+        }
+    }, []);
+
+    const handleAddEvent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newEvent.title.trim() || !newEvent.date.trim() || !newEvent.description.trim() || !newEvent.location.trim()) {
+            setError('Please provide a title, date, description, and location for the event.');
+            return;
+        }
+
+        setIsSubmittingEvent(true);
+        setError('');
+        try {
+            const res = await fetch('/api/events', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-admin-key': adminKey,
+                },
+                body: JSON.stringify(newEvent),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to add event');
+
+            setEvents((prev) => {
+                const updated = [data.event, ...prev];
+                try {
+                    localStorage.setItem('portfolio_events_cache', JSON.stringify(updated));
+                } catch (e) {}
+                return updated;
+            });
+
+            setNewEvent({
+                title: '',
+                type: 'college',
+                date: '',
+                description: '',
+                location: '',
+                image: '',
+                link: ''
+            });
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to add event');
+        } finally {
+            setIsSubmittingEvent(false);
+        }
+    };
+
+    const handleDeleteEvent = async (id: string) => {
+        if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+            return;
+        }
+
+        setError('');
+        try {
+            const res = await fetch(`/api/events?id=${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'x-admin-key': adminKey,
+                },
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to delete event');
+
+            setEvents((prev) => {
+                const updated = prev.filter((ev) => ev._id !== id);
+                try {
+                    localStorage.setItem('portfolio_events_cache', JSON.stringify(updated));
+                } catch (e) {}
+                return updated;
+            });
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to delete event');
+        }
+    };
+
     useEffect(() => {
         if (!isAuthenticated) return;
         fetchContacts();
         fetchVisitors();
         fetchProjects();
         fetchCertifications();
-    }, [isAuthenticated, fetchContacts, fetchVisitors, fetchProjects, fetchCertifications]);
+        fetchEvents();
+    }, [isAuthenticated, fetchContacts, fetchVisitors, fetchProjects, fetchCertifications, fetchEvents]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -614,6 +739,16 @@ export default function AdminDashboard() {
                         }`}
                     >
                         Manage Certifications
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('events')}
+                        className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                            activeTab === 'events'
+                                ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/10'
+                                : 'text-zinc-400 hover:text-white'
+                        }`}
+                    >
+                        Manage Events
                     </button>
                 </div>
 
@@ -1248,6 +1383,305 @@ export default function AdminDashboard() {
                                         </>
                                     ) : (
                                         'Publish Certificate'
+                                    )}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'events' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Events List */}
+                        <div className="lg:col-span-2 order-2 lg:order-1">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-semibold flex items-center gap-2">
+                                    Current Events & Activities
+                                    <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full font-normal">
+                                        {events.length}
+                                    </span>
+                                </h2>
+                                <button
+                                    onClick={fetchEvents}
+                                    disabled={eventsLoading}
+                                    className="text-sm text-zinc-400 hover:text-yellow-400 transition-colors flex items-center gap-2"
+                                >
+                                    
+                                    Refresh
+                                </button>
+                            </div>
+
+                            {eventsLoading ? (
+                                <div className="flex justify-center py-20">
+                                    <svg className="w-8 h-8 animate-spin text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 12H18" />
+                                    </svg>
+                                </div>
+                            ) : events.length === 0 ? (
+                                <div className="text-center py-20 bg-zinc-950/40 border border-zinc-900 rounded-xl">
+                                    <p className="text-zinc-500">No events found. Seed list using refresh.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {events.map((ev) => (
+                                        <div key={ev._id || ev.id} className="bg-zinc-950/40 border border-zinc-900 rounded-xl p-4 flex flex-col justify-between hover:border-zinc-800 transition-all">
+                                            <div>
+                                                <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-black/20 mb-3 border border-zinc-900 flex items-center justify-center">
+                                                    {ev.image ? (
+                                                        <img
+                                                            src={ev.image}
+                                                            alt={ev.title}
+                                                            className="h-full w-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="text-[10px] text-zinc-650 font-mono border border-zinc-900/50 p-2 text-center rounded">
+                                                            No Image (Stylized Mock Badge Used)
+                                                        </div>
+                                                    )}
+                                                    <span className={`absolute top-2 right-2 text-[8px] font-bold px-2 py-0.5 rounded uppercase ${
+                                                        ev.type === 'college' ? 'bg-yellow-400 text-black' : 'bg-white text-black'
+                                                    }`}>
+                                                        {ev.type === 'college' ? 'College' : 'External'}
+                                                    </span>
+                                                </div>
+                                                <h3 className="font-bold text-white text-sm line-clamp-2 uppercase tracking-wide leading-relaxed font-roboto">
+                                                    {ev.title}
+                                                </h3>
+                                                <p className="text-zinc-505 text-xs mt-1.5 line-clamp-2 leading-relaxed">{ev.description}</p>
+                                                <div className="mt-3 space-y-1 text-[10px] text-zinc-500 font-mono">
+                                                    <div>📍 {ev.location}</div>
+                                                    <div>📅 {ev.date}</div>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 pt-3 border-t border-zinc-900/50 flex justify-between items-center">
+                                                <span className="text-[9px] text-zinc-500 font-mono">
+                                                    {ev.createdAt ? formatDate(ev.createdAt) : 'Static'}
+                                                </span>
+                                                <button
+                                                    onClick={() => handleDeleteEvent(ev._id || ev.id)}
+                                                    className="text-xs text-red-500 hover:text-red-400 transition-colors flex items-center gap-1 cursor-pointer font-bold font-mono"
+                                                >
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                    DELETE
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Add Event Form */}
+                        <div className="order-1 lg:order-2">
+                            <h2 className="text-xl font-semibold mb-6">Add New Event</h2>
+                            <form onSubmit={handleAddEvent} className="bg-zinc-950/40 border border-zinc-900 rounded-xl p-5 md:p-6 space-y-5">
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Event Title *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={newEvent.title || ''}
+                                        onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                                        placeholder="e.g. Breaking into IoT Workshop"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Event Type *</label>
+                                    <select
+                                        value={newEvent.type}
+                                        onChange={(e) => setNewEvent({ ...newEvent, type: e.target.value as 'college' | 'off-college' })}
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white outline-none focus:border-yellow-400 transition-colors cursor-pointer"
+                                    >
+                                        <option value="college">On-Campus (College)</option>
+                                        <option value="off-college">Off-Campus (External)</option>
+                                    </select>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-zinc-400 text-xs font-medium mb-1.5">Date *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={newEvent.date || ''}
+                                            onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                                            placeholder="e.g. 23 MAR 2025"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-zinc-400 text-xs font-medium mb-1.5">Location *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={newEvent.location || ''}
+                                            onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                                            placeholder="e.g. NIAT, Hyderabad"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Event Description *</label>
+                                    <textarea
+                                        required
+                                        rows={3}
+                                        value={newEvent.description || ''}
+                                        onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                                        placeholder="Brief details of what you did/learned at this event..."
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors resize-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">How it went — Story (Optional)</label>
+                                    <textarea
+                                        rows={4}
+                                        value={(newEvent as any).story || ''}
+                                        onChange={(e) => setNewEvent({ ...newEvent, ...(newEvent as any), story: e.target.value } as any)}
+                                        placeholder="Write a full story about this event — what happened, what you built, learned, or achieved..."
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors resize-none text-sm"
+                                    />
+                                    <p className="text-[10px] text-zinc-600 mt-1">This appears in the event preview drawer as &quot;HOW IT WENT&quot;.</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Tags / Topics (Optional)</label>
+                                    <input
+                                        type="text"
+                                        value={Array.isArray((newEvent as any).tags) ? ((newEvent as any).tags as string[]).join(', ') : ((newEvent as any).tags || '')}
+                                        onChange={(e) => setNewEvent({ ...newEvent, tags: e.target.value } as any)}
+                                        placeholder="IoT, Workshop, NIAT, Electronics (comma-separated)"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                    />
+                                    <p className="text-[10px] text-zinc-600 mt-1">Shown as tag pills in the event preview drawer.</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Event Image (Optional)</label>
+                                    <div className="flex gap-2 mb-3 bg-zinc-950 p-1 border border-zinc-800 rounded-lg">
+                                        <button
+                                            type="button"
+                                            onClick={() => { setEventImageType('upload'); setNewEvent({ ...newEvent, image: '' }); }}
+                                            className={`flex-1 py-1 rounded text-xs font-medium transition-all ${eventImageType === 'upload' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'}`}
+                                        >
+                                            File Upload
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setEventImageType('url'); setNewEvent({ ...newEvent, image: '' }); }}
+                                            className={`flex-1 py-1 rounded text-xs font-medium transition-all ${eventImageType === 'url' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'}`}
+                                        >
+                                            Image URL
+                                        </button>
+                                    </div>
+
+                                    {eventImageType === 'upload' ? (
+                                        <div className="space-y-3">
+                                            <input
+                                                type="file"
+                                                ref={eventFileInputRef}
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) handleEventFile(file);
+                                                }}
+                                                className="hidden"
+                                            />
+                                            <div
+                                                onDragOver={(e) => {
+                                                    e.preventDefault();
+                                                    setIsDraggingEvent(true);
+                                                }}
+                                                onDragLeave={() => setIsDraggingEvent(false)}
+                                                onDrop={(e) => {
+                                                    e.preventDefault();
+                                                    setIsDraggingEvent(false);
+                                                    const file = e.dataTransfer.files?.[0];
+                                                    if (file) handleEventFile(file);
+                                                }}
+                                                onClick={() => eventFileInputRef.current?.click()}
+                                                className={`relative w-full h-36 border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-4 cursor-pointer transition-all duration-300 ${
+                                                    isDraggingEvent
+                                                        ? 'border-yellow-400 bg-yellow-400/5'
+                                                        : 'border-zinc-800 bg-zinc-950 hover:border-zinc-700'
+                                                }`}
+                                            >
+                                                {newEvent.image ? (
+                                                    <div className="relative w-full h-full flex items-center justify-center group/preview">
+                                                        <img
+                                                            src={newEvent.image}
+                                                            alt="Preview"
+                                                            className="max-h-full max-w-full object-contain rounded-lg"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setNewEvent((prev) => ({ ...prev, image: '' }));
+                                                            }}
+                                                            className="absolute inset-0 bg-black/60 opacity-0 group-hover/preview:opacity-100 transition-opacity flex items-center justify-center text-red-500 font-semibold text-xs rounded-lg"
+                                                        >
+                                                            Remove Image
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center text-center space-y-2 text-zinc-500">
+                                                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                        </svg>
+                                                        <div>
+                                                            <p className="text-xs font-medium text-zinc-300">Drag & drop your image here</p>
+                                                            <p className="text-[10px] text-zinc-650 mt-0.5">or click to browse from files</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <input
+                                                type="url"
+                                                value={newEvent.image || ''}
+                                                onChange={(e) => setNewEvent({ ...newEvent, image: e.target.value })}
+                                                placeholder="https://example.com/event-photo.png"
+                                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Event Link (Optional)</label>
+                                    <input
+                                        type="url"
+                                        value={newEvent.link || ''}
+                                        onChange={(e) => setNewEvent({ ...newEvent, link: e.target.value })}
+                                        placeholder="https://example.com/certificate-or-post"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isSubmittingEvent}
+                                    className="w-full py-3 bg-yellow-400 hover:bg-yellow-300 disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-semibold rounded-lg shadow-lg hover:shadow-yellow-400/5 transition-all flex items-center justify-center gap-2 cursor-pointer font-roboto uppercase text-sm"
+                                >
+                                    {isSubmittingEvent ? (
+                                        <>
+                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Publishing...
+                                        </>
+                                    ) : (
+                                        'Publish Event'
                                     )}
                                 </button>
                             </form>

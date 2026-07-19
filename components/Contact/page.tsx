@@ -50,7 +50,7 @@ export const Contact = () => {
     };
 
     return (
-        <section id="section7" className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white px-6 md:px-10 py-24 font-mono">
+        <section id="section8" className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white px-6 md:px-10 py-24 font-mono">
             <div className="mx-auto">
                 <div className="mb-16">
                     <h2 className={`text-amber-600 dark:text-yellow-400 text-sm md:text-4xl tracking-widest font-bold flex items-center gap-4 uppercase font-roboto ${transition}`}>

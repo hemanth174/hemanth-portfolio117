@@ -3,6 +3,7 @@ import { HomeSection } from "@/components/home_section/page";
 import { Projects } from "@/components/Projects/page";
 import { Skills } from "@/components/Skills/page";
 import { Experience } from "@/components/Experience/page";
+import { Events } from "@/components/Events/page";
 import { Blog } from "@/components/Blog/page";
 import { Contact } from "@/components/Contact/page";
 import { VisitorTracker } from "@/components/VisitorTracker";
@@ -27,9 +28,12 @@ export default function Home() {
         <Experience />
       </div>
       <div id="section6">
-        <Blog />
+        <Events />
       </div>
       <div id="section7">
+        <Blog />
+      </div>
+      <div id="section8">
         <Contact />
       </div>
     </>

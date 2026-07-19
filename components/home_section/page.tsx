@@ -81,8 +81,9 @@ export const HomeSection = () => {
                             <a href="#section3"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>SKILLS</p> </a>
                             <a href="#section4"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>PROJECTS</p> </a>
                             <a href="#section5"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>CERTIFICATION</p> </a>
-                            <a href="#section6"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>BLOG</p></a>
-                            <a href="#section7"><p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>CONTACT</p></a>
+                            <a href="#section6"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>EVENTS</p> </a>
+                            <a href="#section7"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>BLOG</p></a>
+                            <a href="#section8"><p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>CONTACT</p></a>
                         </div>
                         
                         {/* Premium Theme Toggle Button */}
@@ -117,7 +118,7 @@ export const HomeSection = () => {
                         </button>
                         <button 
                             onClick={() => {
-                                document.getElementById('section7')?.scrollIntoView({ behavior: 'smooth' });
+                                document.getElementById('section8')?.scrollIntoView({ behavior: 'smooth' });
                             }} 
                             className="p-3 px-6 border border-zinc-300 dark:border-zinc-800 text-zinc-500 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-500 dark:hover:border-white transition-colors w-full sm:w-auto tracking-wider cursor-pointer font-bold"
                         >

@@ -1,0 +1,165 @@
+
+<h2 class="sr-only">3D Events section UI mockup for Hemanth's portfolio — showing On-Campus and Off-Campus event cards with filter tabs, certificate images, and bold yellow accents.</h2>
+
+<style>
+.ev-wrap { background:#0a0a0a; padding:48px 32px 56px; font-family:'Courier New',monospace; }
+.ev-label { font-size:11px; letter-spacing:4px; color:#FFDD00; margin-bottom:10px; }
+.ev-heading { font-size:52px; font-weight:900; color:#fff; letter-spacing:-2px; line-height:1; margin-bottom:6px; }
+.ev-sub { font-size:12px; color:#444; letter-spacing:2px; margin-bottom:32px; }
+.ev-filters { display:flex; gap:10px; margin-bottom:40px; flex-wrap:wrap; }
+.ev-pill { padding:8px 20px; font-size:10px; letter-spacing:3px; border:1px solid #2a2a2a; color:#555; border-radius:2px; cursor:pointer; transition:all .2s; }
+.ev-pill.active { background:#FFDD00; color:#0a0a0a; border-color:#FFDD00; font-weight:900; }
+.ev-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; perspective:1000px; }
+.ev-card {
+  background:#0f0f0f;
+  border:1px solid #1e1e1e;
+  border-radius:6px;
+  overflow:hidden;
+  position:relative;
+  transform: perspective(800px) rotateX(4deg) rotateY(-3deg);
+  transform-style: preserve-3d;
+  transition: transform .3s ease;
+  box-shadow: 6px 6px 0px #FFDD00, 12px 12px 0px #1a1500;
+}
+.ev-card:nth-child(2) {
+  transform: perspective(800px) rotateX(4deg) rotateY(0deg);
+  box-shadow: 0px 8px 0px #FFDD00, 0px 16px 0px #1a1500;
+  margin-top: -12px;
+}
+.ev-card:nth-child(3) {
+  transform: perspective(800px) rotateX(4deg) rotateY(3deg);
+  box-shadow: -6px 6px 0px #FFDD00, -12px 12px 0px #1a1500;
+}
+.ev-card-img {
+  width:100%; height:120px; background:#141414;
+  display:flex; align-items:center; justify-content:center;
+  border-bottom:1px solid #1e1e1e; overflow:hidden; position:relative;
+}
+.ev-cert-mock {
+  width:85%; height:80px; border-radius:3px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; position:relative;
+}
+.ev-cert-title { font-size:8px; letter-spacing:3px; margin-bottom:4px; font-weight:900; }
+.ev-cert-name { font-size:11px; font-weight:900; }
+.ev-cert-sub { font-size:7px; letter-spacing:1px; margin-top:2px; opacity:0.6; }
+.ev-cert-1 { background:#0d1a0d; border:1px solid #1a3a1a; color:#4CAF50; }
+.ev-cert-2 { background:#1a1200; border:1px solid #3a2800; color:#FFDD00; }
+.ev-cert-3 { background:#0d0d1a; border:1px solid #1a1a3a; color:#6c9eff; }
+.ev-badge {
+  position:absolute; top:10px; right:10px;
+  font-size:8px; letter-spacing:2px; padding:3px 8px;
+  font-weight:900; border-radius:1px;
+}
+.ev-badge.campus { background:#FFDD00; color:#0a0a0a; }
+.ev-badge.offcampus { background:#fff; color:#0a0a0a; }
+.ev-card-body { padding:14px 16px 16px; }
+.ev-event-type { font-size:8px; letter-spacing:2px; color:#FFDD00; margin-bottom:6px; }
+.ev-event-title { font-size:13px; font-weight:900; color:#fff; line-height:1.3; margin-bottom:8px; }
+.ev-event-meta { display:flex; flex-direction:column; gap:3px; margin-bottom:12px; }
+.ev-meta-row { display:flex; align-items:center; gap:6px; font-size:9px; color:#444; letter-spacing:1px; }
+.ev-dot { width:4px; height:4px; background:#FFDD00; border-radius:50%; flex-shrink:0; }
+.ev-card-footer { display:flex; justify-content:space-between; align-items:center; border-top:1px solid #1a1a1a; padding-top:12px; margin-top:4px; }
+.ev-view-btn { font-size:9px; letter-spacing:2px; color:#FFDD00; cursor:pointer; }
+.ev-arrow { font-size:14px; color:#FFDD00; }
+.ev-top-accent { height:3px; background:#FFDD00; width:100%; }
+.ev-stats { display:flex; gap:32px; margin-bottom:44px; }
+.ev-stat-val { font-size:36px; font-weight:900; color:#FFDD00; line-height:1; }
+.ev-stat-label { font-size:9px; letter-spacing:2px; color:#444; margin-top:3px; }
+</style>
+
+<div class="ev-wrap">
+  <div class="ev-label">05 — EXPERIENCE</div>
+  <div class="ev-heading">EVENTS &</div>
+  <div class="ev-heading" style="color:#1e1e1e;">CERTIFICATIONS.</div>
+  <div class="ev-sub">WORKSHOPS · HACKATHONS · CERTIFICATIONS · ACHIEVEMENTS</div>
+
+  <div class="ev-stats">
+    <div><div class="ev-stat-val">12+</div><div class="ev-stat-label">EVENTS ATTENDED</div></div>
+    <div><div class="ev-stat-val">8+</div><div class="ev-stat-label">CERTIFICATIONS</div></div>
+    <div><div class="ev-stat-val">3+</div><div class="ev-stat-label">OFF-CAMPUS</div></div>
+  </div>
+
+  <div class="ev-filters">
+    <div class="ev-pill active">ALL</div>
+    <div class="ev-pill">ON-CAMPUS</div>
+    <div class="ev-pill">OFF-CAMPUS</div>
+    <div class="ev-pill">CERTIFICATIONS</div>
+  </div>
+
+  <div class="ev-grid">
+
+    <div class="ev-card">
+      <div class="ev-top-accent"></div>
+      <div class="ev-card-img">
+        <div class="ev-cert-mock ev-cert-2">
+          <div class="ev-cert-title">CERTIFICATE OF PARTICIPATION</div>
+          <div class="ev-cert-name">HEMANTH RAMA SAI</div>
+          <div class="ev-cert-sub">NXTWAVE · NIAT</div>
+        </div>
+        <div class="ev-badge campus">ON-CAMPUS</div>
+      </div>
+      <div class="ev-card-body">
+        <div class="ev-event-type">WORKSHOP</div>
+        <div class="ev-event-title">Breaking into IoT — Robotics & Advanced Tech</div>
+        <div class="ev-event-meta">
+          <div class="ev-meta-row"><div class="ev-dot"></div>23 MAR 2025</div>
+          <div class="ev-meta-row"><div class="ev-dot"></div>NIAT, HYDERABAD</div>
+        </div>
+        <div class="ev-card-footer">
+          <div class="ev-view-btn">VIEW CERTIFICATE →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ev-card">
+      <div class="ev-top-accent"></div>
+      <div class="ev-card-img">
+        <div class="ev-cert-mock ev-cert-3">
+          <div class="ev-cert-title">CERTIFICATE OF ACHIEVEMENT</div>
+          <div class="ev-cert-name">HEMANTH RAMA SAI</div>
+          <div class="ev-cert-sub">DELOITTE · CYBER JOB SIM</div>
+        </div>
+        <div class="ev-badge offcampus">OFF-CAMPUS</div>
+      </div>
+      <div class="ev-card-body">
+        <div class="ev-event-type">CERTIFICATION</div>
+        <div class="ev-event-title">Deloitte Cyber Job Simulation</div>
+        <div class="ev-event-meta">
+          <div class="ev-meta-row"><div class="ev-dot"></div>OCT 2025</div>
+          <div class="ev-meta-row"><div class="ev-dot"></div>DELOITTE ONLINE</div>
+        </div>
+        <div class="ev-card-footer">
+          <div class="ev-view-btn">VIEW CERTIFICATE →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ev-card">
+      <div class="ev-top-accent"></div>
+      <div class="ev-card-img">
+        <div class="ev-cert-mock ev-cert-1">
+          <div class="ev-cert-title">CERTIFICATE OF PARTICIPATION</div>
+          <div class="ev-cert-name">HEMANTH RAMA SAI</div>
+          <div class="ev-cert-sub">NIAT DRONE CLUB</div>
+        </div>
+        <div class="ev-badge campus">ON-CAMPUS</div>
+      </div>
+      <div class="ev-card-body">
+        <div class="ev-event-type">WORKSHOP</div>
+        <div class="ev-event-title">Swarm Integration with Drones at NIAT</div>
+        <div class="ev-event-meta">
+          <div class="ev-meta-row"><div class="ev-dot"></div>SEP 2025</div>
+          <div class="ev-meta-row"><div class="ev-dot"></div>NIAT DRONE LAB</div>
+        </div>
+        <div class="ev-card-footer">
+          <div class="ev-view-btn">VIEW CERTIFICATE →</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="text-align:center;margin-top:32px;">
+    <div style="display:inline-block;border:1px solid #2a2a2a;color:#555;padding:10px 32px;font-size:10px;letter-spacing:3px;border-radius:2px;">LOAD MORE EVENTS ↓</div>
+  </div>
+</div>

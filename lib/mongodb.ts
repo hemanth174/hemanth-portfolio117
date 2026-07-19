@@ -22,6 +22,7 @@ export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db
   db.collection('projects').createIndex({ createdAt: -1 }).catch(() => {});
   db.collection('visitors').createIndex({ visitedAt: -1 }).catch(() => {});
   db.collection('contacts').createIndex({ createdAt: -1 }).catch(() => {});
+  db.collection('events').createIndex({ createdAt: -1 }).catch(() => {});
 
   cached = { client, db };
   return cached;
