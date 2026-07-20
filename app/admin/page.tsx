@@ -72,7 +72,7 @@ export default function AdminDashboard() {
     const [adminKey, setAdminKey] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isCheckingSession, setIsCheckingSession] = useState(true);
-    const [activeTab, setActiveTab] = useState<'contacts' | 'visitors' | 'projects' | 'certifications' | 'events'>('contacts');
+    const [activeTab, setActiveTab] = useState<'contacts' | 'visitors' | 'projects' | 'certifications' | 'events' | 'workflows'>('contacts');
     const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Contact state
@@ -124,6 +124,23 @@ export default function AdminDashboard() {
     const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
     const [isDraggingEvent, setIsDraggingEvent] = useState(false);
     const eventFileInputRef = useRef<HTMLInputElement>(null);
+
+    // Workflow state
+    const [workflows, setWorkflows] = useState<any[]>([]);
+    const [workflowsLoading, setWorkflowsLoading] = useState(false);
+    const [newWorkflow, setNewWorkflow] = useState({
+        title: '',
+        description: '',
+        category: 'Automation',
+        tags: '',
+        thumbnail: '',
+        workflowJson: '',
+    });
+    const [workflowThumbType, setWorkflowThumbType] = useState<'upload' | 'url'>('upload');
+    const [isSubmittingWorkflow, setIsSubmittingWorkflow] = useState(false);
+    const [isDraggingWorkflow, setIsDraggingWorkflow] = useState(false);
+    const workflowJsonRef = useRef<HTMLInputElement>(null);
+    const workflowThumbRef = useRef<HTMLInputElement>(null);
 
     const handleEventFile = (file: File) => {
         if (!file.type.startsWith('image/')) {
@@ -518,6 +535,65 @@ export default function AdminDashboard() {
         }
     };
 
+    const fetchWorkflows = useCallback(async () => {
+        setWorkflowsLoading(true);
+        setError('');
+        try {
+            const res = await fetch('/api/workflows');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to fetch workflows');
+            setWorkflows(data.workflows || []);
+            try { localStorage.setItem('portfolio_workflows_cache', JSON.stringify(data.workflows)); } catch (e) {}
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load workflows');
+        } finally {
+            setWorkflowsLoading(false);
+        }
+    }, []);
+
+    const handleAddWorkflow = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newWorkflow.title.trim() || !newWorkflow.description.trim() || !newWorkflow.workflowJson.trim()) {
+            setError('Title, description, and a valid n8n JSON file are required.');
+            return;
+        }
+        setIsSubmittingWorkflow(true);
+        setError('');
+        try {
+            const res = await fetch('/api/workflows', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+                body: JSON.stringify(newWorkflow),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to add workflow');
+            setWorkflows((prev) => [data.workflow, ...prev]);
+            setNewWorkflow({ title: '', description: '', category: 'Automation', tags: '', thumbnail: '', workflowJson: '' });
+            if (workflowJsonRef.current) workflowJsonRef.current.value = '';
+            if (workflowThumbRef.current) workflowThumbRef.current.value = '';
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to add workflow');
+        } finally {
+            setIsSubmittingWorkflow(false);
+        }
+    };
+
+    const handleDeleteWorkflow = async (id: string) => {
+        if (!window.confirm('Delete this workflow? This cannot be undone.')) return;
+        setError('');
+        try {
+            const res = await fetch(`/api/workflows?id=${id}`, {
+                method: 'DELETE',
+                headers: { 'x-admin-key': adminKey },
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to delete workflow');
+            setWorkflows((prev) => prev.filter((w) => w._id !== id));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to delete workflow');
+        }
+    };
+
     useEffect(() => {
         if (!isAuthenticated) return;
         fetchContacts();
@@ -525,7 +601,8 @@ export default function AdminDashboard() {
         fetchProjects();
         fetchCertifications();
         fetchEvents();
-    }, [isAuthenticated, fetchContacts, fetchVisitors, fetchProjects, fetchCertifications, fetchEvents]);
+        fetchWorkflows();
+    }, [isAuthenticated, fetchContacts, fetchVisitors, fetchProjects, fetchCertifications, fetchEvents, fetchWorkflows]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -749,6 +826,17 @@ export default function AdminDashboard() {
                         }`}
                     >
                         Manage Events
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('workflows')}
+                        className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                            activeTab === 'workflows'
+                                ? 'bg-[#EA4B35] text-white shadow-lg shadow-[#EA4B35]/20'
+                                : 'text-zinc-400 hover:text-white'
+                        }`}
+                    >
+                        <svg width="14" height="14" viewBox="0 0 60 60" fill="none"><rect width="60" height="60" rx="10" fill="#EA4B35"/><text x="50%" y="56%" dominantBaseline="middle" textAnchor="middle" fontSize="22" fontWeight="bold" fontFamily="monospace" fill="white">n8n</text></svg>
+                        n8n Workflows
                     </button>
                 </div>
 
@@ -1688,7 +1776,244 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 )}
+                {/* ─── n8n Workflows Tab ─── */}
+                {activeTab === 'workflows' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Add Workflow Form */}
+                        <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-6">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-8 h-8 rounded-lg bg-[#EA4B35]/10 flex items-center justify-center">
+                                    <svg width="16" height="16" viewBox="0 0 60 60" fill="none"><rect width="60" height="60" rx="10" fill="#EA4B35"/><text x="50%" y="56%" dominantBaseline="middle" textAnchor="middle" fontSize="22" fontWeight="bold" fontFamily="monospace" fill="white">n8n</text></svg>
+                                </div>
+                                <h2 className="text-lg font-semibold">Upload n8n Workflow</h2>
+                            </div>
+
+                            <form onSubmit={handleAddWorkflow} className="space-y-5">
+                                {/* Title */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Workflow Title *</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        value={newWorkflow.title}
+                                        onChange={(e) => setNewWorkflow({ ...newWorkflow, title: e.target.value })}
+                                        placeholder="e.g. Auto-reply Gmail with AI"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-[#EA4B35]/60 transition-colors"
+                                    />
+                                </div>
+
+                                {/* Category */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Category</label>
+                                    <div className="relative">
+                                        <select
+                                            value={newWorkflow.category}
+                                            onChange={(e) => setNewWorkflow({ ...newWorkflow, category: e.target.value })}
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white outline-none focus:border-[#EA4B35]/60 transition-colors appearance-none cursor-pointer"
+                                        >
+                                            <option value="Automation">Automation</option>
+                                            <option value="AI Agent">AI Agent</option>
+                                            <option value="Data Pipeline">Data Pipeline</option>
+                                            <option value="Webhook">Webhook</option>
+                                            <option value="Notification">Notification</option>
+                                            <option value="Custom">Custom</option>
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Description */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Description *</label>
+                                    <textarea
+                                        required
+                                        rows={3}
+                                        value={newWorkflow.description}
+                                        onChange={(e) => setNewWorkflow({ ...newWorkflow, description: e.target.value })}
+                                        placeholder="What does this workflow do? Who is it useful for?"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-[#EA4B35]/60 transition-colors resize-none"
+                                    />
+                                </div>
+
+                                {/* Tags */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Tags (comma-separated)</label>
+                                    <input
+                                        type="text"
+                                        value={newWorkflow.tags}
+                                        onChange={(e) => setNewWorkflow({ ...newWorkflow, tags: e.target.value })}
+                                        placeholder="Gmail, AI, OpenAI, Auto-reply"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-[#EA4B35]/60 transition-colors"
+                                    />
+                                </div>
+
+                                {/* Thumbnail */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Thumbnail (optional)</label>
+                                    <div className="flex gap-2 mb-2 bg-zinc-950 p-1 border border-zinc-800 rounded-lg">
+                                        <button type="button" onClick={() => { setWorkflowThumbType('upload'); setNewWorkflow({ ...newWorkflow, thumbnail: '' }); }}
+                                            className={`flex-1 py-1 rounded text-xs font-medium transition-all ${workflowThumbType === 'upload' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'}`}>
+                                            File Upload
+                                        </button>
+                                        <button type="button" onClick={() => { setWorkflowThumbType('url'); setNewWorkflow({ ...newWorkflow, thumbnail: '' }); }}
+                                            className={`flex-1 py-1 rounded text-xs font-medium transition-all ${workflowThumbType === 'url' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'}`}>
+                                            Image URL
+                                        </button>
+                                    </div>
+                                    {workflowThumbType === 'upload' ? (
+                                        <input
+                                            ref={workflowThumbRef}
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                if (file.size > 5 * 1024 * 1024) { setError('Image must be < 5 MB.'); return; }
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => setNewWorkflow((p) => ({ ...p, thumbnail: reader.result as string }));
+                                                reader.readAsDataURL(file);
+                                            }}
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-400 text-xs outline-none focus:border-[#EA4B35]/60 transition-colors file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-zinc-800 file:text-zinc-300 hover:file:bg-zinc-700 cursor-pointer"
+                                        />
+                                    ) : (
+                                        <input
+                                            type="url"
+                                            value={newWorkflow.thumbnail}
+                                            onChange={(e) => setNewWorkflow({ ...newWorkflow, thumbnail: e.target.value })}
+                                            placeholder="https://example.com/image.png"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-[#EA4B35]/60 transition-colors"
+                                        />
+                                    )}
+                                </div>
+
+                                {/* n8n JSON File Upload */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">
+                                        n8n Workflow JSON File *
+                                        <span className="ml-2 text-[#EA4B35] font-normal">(.json exported from n8n)</span>
+                                    </label>
+                                    <div
+                                        onDragOver={(e) => { e.preventDefault(); setIsDraggingWorkflow(true); }}
+                                        onDragLeave={() => setIsDraggingWorkflow(false)}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            setIsDraggingWorkflow(false);
+                                            const file = e.dataTransfer.files[0];
+                                            if (!file || !file.name.endsWith('.json')) { setError('Please drop a .json file.'); return; }
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => setNewWorkflow((p) => ({ ...p, workflowJson: reader.result as string }));
+                                            reader.readAsText(file);
+                                        }}
+                                        className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${isDraggingWorkflow ? 'border-[#EA4B35] bg-[#EA4B35]/5' : 'border-zinc-800 hover:border-zinc-600'}`}
+                                        onClick={() => workflowJsonRef.current?.click()}
+                                    >
+                                        <input
+                                            ref={workflowJsonRef}
+                                            type="file"
+                                            accept=".json,application/json"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => setNewWorkflow((p) => ({ ...p, workflowJson: reader.result as string }));
+                                                reader.readAsText(file);
+                                            }}
+                                        />
+                                        {newWorkflow.workflowJson ? (
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className="w-10 h-10 rounded-full bg-[#EA4B35]/10 flex items-center justify-center">
+                                                    <svg className="w-5 h-5 text-[#EA4B35]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                </div>
+                                                <p className="text-sm text-[#EA4B35] font-semibold">Workflow JSON loaded!</p>
+                                                <p className="text-xs text-zinc-500">{(newWorkflow.workflowJson.length / 1024).toFixed(1)} KB — Click to replace</p>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-2">
+                                                <svg className="w-10 h-10 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                                                <p className="text-sm text-zinc-500">Drop your n8n <span className="text-white font-semibold">.json</span> here or click to browse</p>
+                                                <p className="text-xs text-zinc-700">Export from n8n → Settings → Export Workflow</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] text-zinc-600 mt-1.5">🔒 Credentials are automatically stripped before visitors can download.</p>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isSubmittingWorkflow || !newWorkflow.workflowJson}
+                                    className="w-full flex items-center justify-center gap-2 py-3 bg-[#EA4B35] hover:bg-[#d63d29] text-white font-bold rounded-xl tracking-wide transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    {isSubmittingWorkflow ? (
+                                        <>
+                                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                            Uploading...
+                                        </>
+                                    ) : (
+                                        'Publish Workflow'
+                                    )}
+                                </button>
+                            </form>
+                        </div>
+
+                        {/* Existing Workflows List */}
+                        <div>
+                            <div className="flex items-center justify-between mb-5">
+                                <h2 className="text-lg font-semibold">
+                                    Published Workflows
+                                    <span className="ml-2 text-sm text-zinc-600 font-normal">({workflows.length})</span>
+                                </h2>
+                                <button onClick={fetchWorkflows} disabled={workflowsLoading}
+                                    className="text-sm text-zinc-400 hover:text-[#EA4B35] transition-colors flex items-center gap-2">
+                                    <svg className={`w-4 h-4 ${workflowsLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                    Refresh
+                                </button>
+                            </div>
+
+                            {workflowsLoading ? (
+                                <div className="flex justify-center py-14"><div className="w-8 h-8 border-2 border-[#EA4B35] border-t-transparent rounded-full animate-spin" /></div>
+                            ) : workflows.length === 0 ? (
+                                <div className="text-center py-14 text-zinc-600 border border-dashed border-zinc-800 rounded-2xl">
+                                    <svg width="40" height="40" viewBox="0 0 60 60" fill="none" className="mx-auto mb-3 opacity-30"><rect width="60" height="60" rx="10" fill="#EA4B35"/><text x="50%" y="56%" dominantBaseline="middle" textAnchor="middle" fontSize="22" fontWeight="bold" fontFamily="monospace" fill="white">n8n</text></svg>
+                                    <p className="text-sm">No workflows uploaded yet</p>
+                                    <p className="text-xs mt-1 text-zinc-700">Use the form to publish your first n8n workflow</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3 max-h-[720px] overflow-y-auto pr-1">
+                                    {workflows.map((wf) => (
+                                        <div key={wf._id} className="flex items-start gap-4 bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-4 hover:border-zinc-700/50 transition-all group">
+                                            <div className="w-9 h-9 rounded-lg bg-[#EA4B35]/10 flex items-center justify-center shrink-0">
+                                                <svg width="18" height="18" viewBox="0 0 60 60" fill="none"><rect width="60" height="60" rx="8" fill="#EA4B35"/><text x="50%" y="56%" dominantBaseline="middle" textAnchor="middle" fontSize="20" fontWeight="bold" fontFamily="monospace" fill="white">n8n</text></svg>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-white truncate">{wf.title}</p>
+                                                <p className="text-xs text-zinc-500 mt-0.5 truncate">{wf.description}</p>
+                                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                                    <span className="text-[9px] px-1.5 py-0.5 bg-[#EA4B35]/10 text-[#EA4B35] border border-[#EA4B35]/20 rounded font-mono uppercase">{wf.category}</span>
+                                                    {wf.nodeCount > 0 && <span className="text-[9px] text-zinc-600 font-mono">{wf.nodeCount} nodes</span>}
+                                                    {wf.tags?.slice(0,3).map((t: string, i: number) => (
+                                                        <span key={i} className="text-[9px] text-zinc-600 font-mono border border-zinc-800 px-1.5 py-0.5 rounded">{t}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteWorkflow(wf._id)}
+                                                className="shrink-0 w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all cursor-pointer"
+                                                title="Delete workflow"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </main>
+
         </div>
     );
 }
