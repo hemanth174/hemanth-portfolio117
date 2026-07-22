@@ -2,11 +2,12 @@ import { About } from "@/components/About/page";
 import { HomeSection } from "@/components/home_section/page";
 import { Projects } from "@/components/Projects/page";
 import { Skills } from "@/components/Skills/page";
+import { WorkExperience } from "@/components/WorkExperience/page";
 import { Experience } from "@/components/Experience/page";
 import { Events } from "@/components/Events/page";
-import { Blog } from "@/components/Blog/page";
 import { Contact } from "@/components/Contact/page";
 import { VisitorTracker } from "@/components/VisitorTracker";
+
 export default function Home() {
   return (
     <>
@@ -25,13 +26,13 @@ export default function Home() {
         <Projects />
       </div>
       <div id="section5">
-        <Experience />
+        <WorkExperience />
       </div>
       <div id="section6">
-        <Events />
+        <Experience />
       </div>
       <div id="section7">
-        <Blog />
+        <Events />
       </div>
       <div id="section8">
         <Contact />

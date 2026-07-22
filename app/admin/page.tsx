@@ -72,7 +72,7 @@ export default function AdminDashboard() {
     const [adminKey, setAdminKey] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isCheckingSession, setIsCheckingSession] = useState(true);
-    const [activeTab, setActiveTab] = useState<'contacts' | 'visitors' | 'projects' | 'certifications' | 'events' | 'workflows'>('contacts');
+    const [activeTab, setActiveTab] = useState<'contacts' | 'visitors' | 'projects' | 'certifications' | 'events' | 'workflows' | 'experience'>('contacts');
     const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Contact state
@@ -141,6 +141,24 @@ export default function AdminDashboard() {
     const [isDraggingWorkflow, setIsDraggingWorkflow] = useState(false);
     const workflowJsonRef = useRef<HTMLInputElement>(null);
     const workflowThumbRef = useRef<HTMLInputElement>(null);
+
+    // Work Experience state
+    const [workExperiences, setWorkExperiences] = useState<any[]>([]);
+    const [workExperiencesLoading, setWorkExperiencesLoading] = useState(false);
+    const [newExperience, setNewExperience] = useState({
+        company: '',
+        role: '',
+        duration: '',
+        isCurrent: false,
+        location: '',
+        description: '',
+        skills: '',
+        link: '',
+        proof: '',
+    });
+    const [experienceProofType, setExperienceProofType] = useState<'upload' | 'url'>('upload');
+    const [isSubmittingExperience, setIsSubmittingExperience] = useState(false);
+    const experienceProofRef = useRef<HTMLInputElement>(null);
 
     const handleEventFile = (file: File) => {
         if (!file.type.startsWith('image/')) {
@@ -594,6 +612,64 @@ export default function AdminDashboard() {
         }
     };
 
+    const fetchWorkExperiences = useCallback(async () => {
+        setWorkExperiencesLoading(true);
+        setError('');
+        try {
+            const res = await fetch('/api/experience');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to fetch work experiences');
+            setWorkExperiences(data.experiences || []);
+            try { localStorage.setItem('portfolio_work_experience_cache', JSON.stringify(data.experiences)); } catch (e) {}
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load work experiences');
+        } finally {
+            setWorkExperiencesLoading(false);
+        }
+    }, []);
+
+    const handleAddExperience = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newExperience.company.trim() || !newExperience.role.trim() || !newExperience.duration.trim() || !newExperience.description.trim()) {
+            setError('Company, role, duration, and description are required.');
+            return;
+        }
+        setIsSubmittingExperience(true);
+        setError('');
+        try {
+            const res = await fetch('/api/experience', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+                body: JSON.stringify(newExperience),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to add work experience');
+            setWorkExperiences((prev) => [data.experience, ...prev]);
+            setNewExperience({ company: '', role: '', duration: '', isCurrent: false, location: '', description: '', skills: '', link: '', proof: '' });
+            if (experienceProofRef.current) experienceProofRef.current.value = '';
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to add work experience');
+        } finally {
+            setIsSubmittingExperience(false);
+        }
+    };
+
+    const handleDeleteExperience = async (id: string) => {
+        if (!window.confirm('Delete this work experience entry? This cannot be undone.')) return;
+        setError('');
+        try {
+            const res = await fetch(`/api/experience?id=${id}`, {
+                method: 'DELETE',
+                headers: { 'x-admin-key': adminKey },
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to delete work experience');
+            setWorkExperiences((prev) => prev.filter((exp) => exp._id !== id));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to delete work experience');
+        }
+    };
+
     useEffect(() => {
         if (!isAuthenticated) return;
         fetchContacts();
@@ -602,7 +678,8 @@ export default function AdminDashboard() {
         fetchCertifications();
         fetchEvents();
         fetchWorkflows();
-    }, [isAuthenticated, fetchContacts, fetchVisitors, fetchProjects, fetchCertifications, fetchEvents, fetchWorkflows]);
+        fetchWorkExperiences();
+    }, [isAuthenticated, fetchContacts, fetchVisitors, fetchProjects, fetchCertifications, fetchEvents, fetchWorkflows, fetchWorkExperiences]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -837,6 +914,16 @@ export default function AdminDashboard() {
                     >
                         <svg width="14" height="14" viewBox="0 0 60 60" fill="none"><rect width="60" height="60" rx="10" fill="#EA4B35"/><text x="50%" y="56%" dominantBaseline="middle" textAnchor="middle" fontSize="22" fontWeight="bold" fontFamily="monospace" fill="white">n8n</text></svg>
                         n8n Workflows
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('experience')}
+                        className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                            activeTab === 'experience'
+                                ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/10'
+                                : 'text-zinc-400 hover:text-white'
+                        }`}
+                    >
+                        Work Experience
                     </button>
                 </div>
 
@@ -2002,6 +2089,230 @@ export default function AdminDashboard() {
                                                 onClick={() => handleDeleteWorkflow(wf._id)}
                                                 className="shrink-0 w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all cursor-pointer"
                                                 title="Delete workflow"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+                {/* ─── Work Experience Tab ─── */}
+                {activeTab === 'experience' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Add Experience Form */}
+                        <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-6">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-8 h-8 rounded-lg bg-yellow-400/10 flex items-center justify-center text-yellow-400">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <h2 className="text-lg font-semibold">Add Work Experience / Internship</h2>
+                            </div>
+
+                            <form onSubmit={handleAddExperience} className="space-y-5">
+                                {/* Role / Title */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Role / Job Title *</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        value={newExperience.role}
+                                        onChange={(e) => setNewExperience({ ...newExperience, role: e.target.value })}
+                                        placeholder="e.g. Full Stack Developer Intern"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                    />
+                                </div>
+
+                                {/* Company */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Company Name *</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        value={newExperience.company}
+                                        onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
+                                        placeholder="e.g. Acme Tech Solutions"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                    />
+                                </div>
+
+                                {/* Duration & Is Current Checkbox */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-zinc-400 text-xs font-medium mb-1.5">Duration / Dates *</label>
+                                        <input
+                                            required
+                                            type="text"
+                                            value={newExperience.duration}
+                                            onChange={(e) => setNewExperience({ ...newExperience, duration: e.target.value })}
+                                            placeholder="e.g. JAN 2025 - PRESENT"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-3 pt-6">
+                                        <label className="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                                            <input
+                                                type="checkbox"
+                                                checked={newExperience.isCurrent}
+                                                onChange={(e) => setNewExperience({ ...newExperience, isCurrent: e.target.checked })}
+                                                className="w-4 h-4 rounded border-zinc-800 bg-zinc-950 text-yellow-400 focus:ring-yellow-400 accent-yellow-400 cursor-pointer"
+                                            />
+                                            Current Active Internship/Role
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {/* Location */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Location</label>
+                                    <input
+                                        type="text"
+                                        value={newExperience.location}
+                                        onChange={(e) => setNewExperience({ ...newExperience, location: e.target.value })}
+                                        placeholder="e.g. Hyderabad, India (Remote)"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                    />
+                                </div>
+
+                                {/* Description */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Responsibilities & Key Impact *</label>
+                                    <textarea
+                                        required
+                                        rows={4}
+                                        value={newExperience.description}
+                                        onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
+                                        placeholder="Describe what you built, learned, or achieved during this role..."
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors resize-none"
+                                    />
+                                    <p className="text-[10px] text-zinc-600 mt-1">Tip: Separate points into new lines to render structured bullet points.</p>
+                                </div>
+
+                                {/* Skills */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Tech Stack / Skills (comma-separated)</label>
+                                    <input
+                                        type="text"
+                                        value={newExperience.skills}
+                                        onChange={(e) => setNewExperience({ ...newExperience, skills: e.target.value })}
+                                        placeholder="Next.js, Node.js, MongoDB, TypeScript"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                    />
+                                </div>
+
+                                {/* Company Link */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Company Website Link (optional)</label>
+                                    <input
+                                        type="url"
+                                        value={newExperience.link}
+                                        onChange={(e) => setNewExperience({ ...newExperience, link: e.target.value })}
+                                        placeholder="https://company.com"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                    />
+                                </div>
+
+                                {/* Offer Letter / Proof Document */}
+                                <div>
+                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Offer / Experience Letter Proof File (optional)</label>
+                                    <div className="flex gap-2 mb-2 bg-zinc-950 p-1 border border-zinc-800 rounded-lg">
+                                        <button type="button" onClick={() => { setExperienceProofType('upload'); setNewExperience({ ...newExperience, proof: '' }); }}
+                                            className={`flex-1 py-1 rounded text-xs font-medium transition-all ${experienceProofType === 'upload' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'}`}>
+                                            File Upload
+                                        </button>
+                                        <button type="button" onClick={() => { setExperienceProofType('url'); setNewExperience({ ...newExperience, proof: '' }); }}
+                                            className={`flex-1 py-1 rounded text-xs font-medium transition-all ${experienceProofType === 'url' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'}`}>
+                                            Image URL
+                                        </button>
+                                    </div>
+                                    {experienceProofType === 'upload' ? (
+                                        <input
+                                            ref={experienceProofRef}
+                                            type="file"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                if (file.size > 10 * 1024 * 1024) { setError('Proof file must be < 10 MB.'); return; }
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => setNewExperience((p) => ({ ...p, proof: reader.result as string }));
+                                                reader.readAsDataURL(file);
+                                            }}
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-400 text-xs outline-none focus:border-yellow-400 transition-colors file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-zinc-800 file:text-zinc-300 hover:file:bg-zinc-700 cursor-pointer"
+                                        />
+                                    ) : (
+                                        <input
+                                            type="url"
+                                            value={newExperience.proof}
+                                            onChange={(e) => setNewExperience({ ...newExperience, proof: e.target.value })}
+                                            placeholder="https://example.com/offer_letter.pdf"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-700 outline-none focus:border-yellow-400 transition-colors"
+                                        />
+                                    )}
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isSubmittingExperience}
+                                    className="w-full flex items-center justify-center gap-2 py-3 bg-yellow-400 hover:bg-yellow-300 text-black font-bold rounded-xl tracking-wide transition-all disabled:opacity-40"
+                                >
+                                    {isSubmittingExperience ? (
+                                        <>
+                                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                            Publishing...
+                                        </>
+                                    ) : (
+                                        'Publish Experience'
+                                    )}
+                                </button>
+                            </form>
+                        </div>
+
+                        {/* Listed Experiences */}
+                        <div>
+                            <div className="flex items-center justify-between mb-5">
+                                <h2 className="text-lg font-semibold">
+                                    Published Experiences
+                                    <span className="ml-2 text-sm text-zinc-600 font-normal">({workExperiences.length})</span>
+                                </h2>
+                                <button onClick={fetchWorkExperiences} disabled={workExperiencesLoading}
+                                    className="text-sm text-zinc-400 hover:text-yellow-400 transition-colors flex items-center gap-2">
+                                    <svg className={`w-4 h-4 ${workExperiencesLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                    Refresh
+                                </button>
+                            </div>
+
+                            {workExperiencesLoading ? (
+                                <div className="flex justify-center py-14"><div className="w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" /></div>
+                            ) : workExperiences.length === 0 ? (
+                                <div className="text-center py-14 text-zinc-600 border border-dashed border-zinc-800 rounded-2xl">
+                                    <p className="text-sm">No work experiences added yet</p>
+                                    <p className="text-xs mt-1 text-zinc-700">Add your internship or work experience using the form</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3 max-h-[720px] overflow-y-auto pr-1">
+                                    {workExperiences.map((exp) => (
+                                        <div key={exp._id} className="flex items-start gap-4 bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-4 hover:border-zinc-700/50 transition-all group">
+                                            <div className="w-9 h-9 rounded-lg bg-yellow-400/10 text-yellow-400 flex items-center justify-center shrink-0 font-bold">
+                                                {exp.company ? exp.company.charAt(0).toUpperCase() : 'W'}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-sm font-semibold text-white truncate">{exp.role}</p>
+                                                    {exp.isCurrent && (
+                                                        <span className="text-[8px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-mono uppercase">Current</span>
+                                                    )}
+                                                </div>
+                                                <p className="text-xs text-yellow-400/90 font-medium mt-0.5">{exp.company} • <span className="text-zinc-500">{exp.duration}</span></p>
+                                                <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{exp.description}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteExperience(exp._id)}
+                                                className="shrink-0 w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all cursor-pointer"
+                                                title="Delete experience entry"
                                             >
                                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                             </button>

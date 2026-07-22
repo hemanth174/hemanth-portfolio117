@@ -53,7 +53,7 @@ export const HomeSection = () => {
     return (
         <>
             <div className="main-container">
-                <header className="fixed z-50 flex flex-col md:flex-row justify-between items-center min-h-20 w-full bg-zinc-50/70 dark:bg-black/60 backdrop-blur-xl text-zinc-900 dark:text-white px-2 sm:px-6 py-4 md:py-2 border-b border-zinc-200 dark:border-zinc-900">
+                <header className="fixed z-50 flex flex-col md:flex-row justify-between items-center min-h-20 w-full bg-zinc-50/70 dark:bg-black/60 backdrop-blur-xl text-zinc-900 dark:text-white px-3 sm:px-6 py-4 md:py-2 border-b border-zinc-200 dark:border-zinc-900">
                     <a
                         href="#section1"
                         aria-label="Hemanth Atthuluri home"
@@ -75,21 +75,22 @@ export const HomeSection = () => {
                         </span>
                     </a>
                     
-                    <div className="flex items-center gap-4 sm:gap-6 mt-3 md:mt-0">
-                        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-5 tracking-widest text-zinc-500 dark:text-gray-400 text-[10px] sm:text-xs md:text-sm font-semibold">
+                    <div className="relative flex w-full md:w-auto items-center gap-4 sm:gap-6 mt-3 md:mt-0">
+                        <div className="flex min-w-0 flex-1 flex-wrap justify-center gap-x-3 gap-y-2 pr-10 sm:gap-x-4 md:gap-5 md:pr-0 tracking-widest text-zinc-500 dark:text-gray-400 text-[10px] sm:text-xs md:text-sm font-semibold">
                             <a href="#section2"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>ABOUT</p></a>
                             <a href="#section3"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>SKILLS</p> </a>
                             <a href="#section4"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>PROJECTS</p> </a>
-                            <a href="#section5"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>CERTIFICATION</p> </a>
-                            <a href="#section6"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>EVENTS</p> </a>
-                            <a href="#section7"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>BLOG</p></a>
+                            <a href="#section5"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>EXPERIENCE</p> </a>
+                            <a href="#section6"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>CERTIFICATION</p> </a>
+                            <a href="#section7"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>EVENTS</p> </a>
                             <a href="#section8"><p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>CONTACT</p></a>
                         </div>
                         
                         {/* Premium Theme Toggle Button */}
                         <button
                             onClick={() => setTheme(isDarkTheme ? 'light' : 'dark')}
-                            className="flex items-center justify-center w-8 h-8 border border-1 border-white bg-zinc-100 dark:bg-zinc-900/50 hover:border-yellow-400 dark:hover:border-yellow-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-all cursor-pointer text-zinc-500 dark:text-zinc-400 active:scale-95 shadow-sm"
+                            aria-label={hydrated ? (isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode') : 'Switch theme'}
+                            className="absolute right-0 top-1/2 flex h-8 w-8 shrink-0 -translate-y-1/2 items-center justify-center border border-white bg-zinc-100 dark:bg-zinc-900/50 hover:border-yellow-400 dark:hover:border-yellow-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-all cursor-pointer text-zinc-500 dark:text-zinc-400 active:scale-95 shadow-sm md:static md:translate-y-0"
                             title={hydrated ? (isDarkTheme ? 'Switch to Light Mode' : 'Switch to Dark Mode') : 'Switch Theme'}
                         >
                             {hydrated && (isDarkTheme ? <Sun size={14} /> : <Moon size={14} />)}

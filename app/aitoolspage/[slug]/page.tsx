@@ -53,7 +53,7 @@ export default async function AiToolArticlePage({ params }: AiToolArticlePagePro
                         href="/#section6"
                         className="inline-flex border border-zinc-700 px-5 py-2 font-mono text-sm font-bold text-zinc-300 transition-colors hover:border-white hover:text-white"
                     >
-                        Back to Blog
+                        Back to Home
                     </Link>
                 </div>
             <div className="mx-auto flex max-w-4xl flex-col gap-10">

@@ -21,13 +21,13 @@ export default function AIToolsPage(): React.JSX.Element {
 
     return (
         <div className="bg-black text-white min-h-screen">
-         {/* Go Back to Blog Button */}
+         {/* Go Back Home Button */}
                 <div className="pt-8 pb-2 px-10">
                     <Link
                         href="/#section6"
                         className="inline-block px-5 py-2 bg-yellow-400 text-black font-bold shadow hover:bg-yellow-500 transition-colors duration-150"
                     >
-                        &larr; Go Back to Blog
+                        &larr; Go Back Home
                     </Link>
                 </div>
             <div className="flex flex-col gap-10 px-4 md:px-20">
