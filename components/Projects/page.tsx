@@ -16,10 +16,13 @@ type Project = {
     id?: number;
     title: string;
     category: string;
+    projectType?: 'big' | 'small';
+    order?: number;
     description: string;
     image?: string;
     codeUrl?: string;
     liveUrl?: string;
+    createdAt?: string | Date;
 };
 
 type N8nWorkflow = {
@@ -32,51 +35,6 @@ type N8nWorkflow = {
     nodeCount?: number;
     workflowJson?: string;
 };
-
-// ─── Static project data ─────────────────────────────────────────────────────
-
-const projectsData: Project[] = [
-    {
-        id: 1,
-        title: 'SyllabiQ — Exam Syllabus Tracker',
-        category: 'Personal Project',
-        description:
-            'A full-stack web app that helps students track their syllabus topics, monitor subject-wise progress, and count down to exam day — all in one dashboard.',
-        image: projectImg1.src,
-        codeUrl: 'https://github.com/hemanth174/SyllbuIQ.git',
-        liveUrl: '#',
-    },
-    {
-        id: 2,
-        title: 'HOAS — Hostel Operational Accountability System',
-        category: 'StartUp',
-        description:
-            'A full-stack web platform that streamlines hostel operations by enabling complaint tracking, role-based management, and real-time accountability between students, wardens, and management.',
-        image: projectImg2.src,
-        codeUrl: 'https://github.com/niatapppurpose-APPs/HOAS.git',
-        liveUrl: 'https://hoas-client-4n13.vercel.app/',
-    },
-    {
-        id: 3,
-        title: 'LLM Student Assistant — AI Study Companion',
-        category: 'Personal Project',
-        description:
-            'LLM-based student assistant deployed on Hugging Face Spaces that delivers real-time answers, explanations, and learning support using natural language interaction.',
-        image: projectImg3.src,
-        codeUrl: 'https://huggingface.co/spaces/Hemanth789/LLM_student_assisstant/tree/main',
-        liveUrl: 'https://huggingface.co/spaces/Hemanth789/LLM_student_assisstant',
-    },
-    {
-        id: 4,
-        title: 'Ember & Oak — Fine Dining Restaurant',
-        category: 'Freelance Project',
-        description:
-            'A premium fine-dining restaurant website featuring an elegant menu, booking integration, and a sophisticated aesthetic. Built as a freelance demo to showcase high-end UI/UX.',
-        image: projectImg4.src,
-        codeUrl: 'https://github.com/hemanth174/restaurant-client.git',
-        liveUrl: 'https://restaurant-demo117.netlify.app/',
-    },
-];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -399,7 +357,8 @@ const ProjectCard = ({ project, noHover }: { project: Project; noHover?: boolean
 // ─── Main Projects Component ──────────────────────────────────────────────────
 
 function ProjectsList() {
-    const [projects, setProjects] = useState<Project[]>(projectsData);
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [projectsLoading, setProjectsLoading] = useState(true);
     const [workflows, setWorkflows] = useState<N8nWorkflow[]>([]);
     const [workflowsLoading, setWorkflowsLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'notebooks'>('all');
@@ -413,19 +372,23 @@ function ProjectsList() {
             const cached = localStorage.getItem('portfolio_projects_cache');
             if (cached) {
                 const parsed = JSON.parse(cached);
-                if (Array.isArray(parsed) && parsed.length > 0) setProjects(parsed);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    setProjects(parsed);
+                    setProjectsLoading(false);
+                }
             }
         } catch {}
 
         fetch('/api/projects')
             .then((r) => r.json())
             .then((d) => {
-                if (d.projects?.length > 0) {
+                if (d.projects) {
                     setProjects(d.projects);
                     try { localStorage.setItem('portfolio_projects_cache', JSON.stringify(d.projects)); } catch {}
                 }
             })
-            .catch(() => {});
+            .catch(() => {})
+            .finally(() => setProjectsLoading(false));
 
         // Load n8n workflows
         fetch('/api/workflows')
@@ -435,11 +398,32 @@ function ProjectsList() {
             .finally(() => setWorkflowsLoading(false));
     }, []);
 
-    const normalProjects = projects.filter((p) => p.category !== 'LLM Notebook');
-    const notebookProjects = projects.filter((p) => p.category === 'LLM Notebook');
+    // Sort projects: Big Projects first, Small Projects second, then order/creation date descending
+    const sortedProjects = [...projects].sort((a, b) => {
+        const getNormalizedType = (p: Project) => {
+            if (p.projectType === 'small' || p.projectType === 'big') return p.projectType;
+            return p.category === 'LLM Notebook' ? 'small' : 'big';
+        };
+
+        const typeA = getNormalizedType(a) === 'big' ? 0 : 1;
+        const typeB = getNormalizedType(b) === 'big' ? 0 : 1;
+
+        if (typeA !== typeB) return typeA - typeB;
+
+        const orderA = typeof a.order === 'number' ? a.order : 0;
+        const orderB = typeof b.order === 'number' ? b.order : 0;
+        if (orderA !== orderB) return orderB - orderA;
+
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return dateB - dateA;
+    });
+
+    const normalProjects = sortedProjects.filter((p) => p.category !== 'LLM Notebook');
+    const notebookProjects = sortedProjects.filter((p) => p.category === 'LLM Notebook');
 
     const displayedProjects =
-        filter === 'notebooks' ? notebookProjects : [...normalProjects, ...notebookProjects];
+        filter === 'notebooks' ? notebookProjects : sortedProjects;
 
     // Use folder mode if there are > 5 projects OR if there are any workflows
     const useFolderMode = displayedProjects.length > 5 || workflows.length > 0;

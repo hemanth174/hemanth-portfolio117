@@ -11,59 +11,114 @@ function sanitize(value: unknown, maxLength: number): string {
   return value.replace(/[<>]/g, '').trim().slice(0, maxLength);
 }
 
-// GET - Fetch all projects. If database is empty, seed it with the 4 default ones.
+// GET - Fetch all projects. If database is missing any default projects, insert them.
 export async function GET() {
   try {
     const { db } = await connectToDatabase();
     let projects = await db
       .collection('projects')
       .find({})
-      .sort({ createdAt: -1 })
       .toArray();
 
-    // Seed database if empty
-    if (projects.length === 0) {
-      const defaultProjects = [
-        {
-          title: 'SyllabiQ — Exam Syllabus Tracker',
-          category: 'Personal Project',
-          description: 'A full-stack web app that helps students track their syllabus topics, monitor subject-wise progress, and count down to exam day — all in one dashboard.',
-          image: '/Logo_main.png',
-          codeUrl: 'https://github.com/hemanth174/SyllbuIQ.git',
-          liveUrl: '#',
-          createdAt: new Date(Date.now() - 4000),
-        },
-        {
-          title: 'HOAS — Hostel Operational Accountability System',
-          category: 'StartUp',
-          description: 'A full-stack web platform that streamlines hostel operations by enabling complaint tracking, role-based management, and real-time accountability between students, wardens, and management.',
-          image: '/Img2.png',
-          codeUrl: 'https://github.com/niatapppurpose-APPs/HOAS.git',
-          liveUrl: 'https://hoas-client-4n13.vercel.app/',
-          createdAt: new Date(Date.now() - 3000),
-        },
-        {
-          title: 'LLM Student Assistant — AI Study Companion',
-          category: 'Personal Project',
-          description: 'LLM-based student assistant deployed on Hugging Face Spaces that delivers real-time answers, explanations, and learning support using natural language interaction.',
-          image: '/Img3.png',
-          codeUrl: 'https://huggingface.co/spaces/Hemanth789/LLM_student_assisstant/tree/main',
-          liveUrl: 'https://huggingface.co/spaces/Hemanth789/LLM_student_assisstant',
-          createdAt: new Date(Date.now() - 2000),
-        },
-        {
-          title: 'Ember & Oak — Fine Dining Restaurant',
-          category: 'Freelance Project',
-          description: 'A premium fine-dining restaurant website featuring an elegant menu, booking integration, and a sophisticated aesthetic. Built as a freelance demo to showcase high-end UI/UX.',
-          image: '/restaurant_demo.png',
-          codeUrl: 'https://github.com/hemanth174/restaurant-client.git',
-          liveUrl: 'https://restaurant-demo117.netlify.app/',
-          createdAt: new Date(Date.now() - 1000),
-        },
-      ];
-      await db.collection('projects').insertMany(defaultProjects);
-      projects = await db.collection('projects').find({}).sort({ createdAt: -1 }).toArray();
+    const defaultProjects = [
+      {
+        title: 'HOAS — Hostel Operational Accountability System',
+        category: 'StartUp',
+        projectType: 'big',
+        order: 300,
+        description: 'A full-stack web platform that streamlines hostel operations by enabling complaint tracking, role-based management, and real-time accountability between students, wardens, and management.',
+        image: '/Img2.png',
+        codeUrl: 'https://github.com/niatapppurpose-APPs/HOAS.git',
+        liveUrl: 'https://hoas-client-4n13.vercel.app/',
+        createdAt: new Date(Date.now() - 1000),
+      },
+      {
+        title: 'HOME AUTOMATION',
+        category: 'Personal Project',
+        projectType: 'big',
+        order: 290,
+        description: 'An architectural, distributed, off-grid-ready, and a metrics-driven Smart Home automation system. This platform transforms simple device-level switches into a Home Intelligence Platform.',
+        image: '',
+        codeUrl: '#',
+        liveUrl: '#',
+        createdAt: new Date(Date.now() - 1500),
+      },
+      {
+        title: 'Interview Assistant',
+        category: 'Personal Project',
+        projectType: 'big',
+        order: 280,
+        description: 'An interactive AI-powered interview platform that conducts real-time voice interviews across multiple technical topics.',
+        image: '',
+        codeUrl: '#',
+        liveUrl: '#',
+        createdAt: new Date(Date.now() - 1800),
+      },
+      {
+        title: 'SyllabiQ — Exam Syllabus Tracker',
+        category: 'Personal Project',
+        projectType: 'big',
+        order: 270,
+        description: 'A full-stack web app that helps students track their syllabus topics, monitor subject-wise progress, and count down to exam day — all in one dashboard.',
+        image: '/Logo_main.png',
+        codeUrl: 'https://github.com/hemanth174/SyllbuIQ.git',
+        liveUrl: '#',
+        createdAt: new Date(Date.now() - 2000),
+      },
+      {
+        title: 'LLM Student Assistant — AI Study Companion',
+        category: 'Personal Project',
+        projectType: 'big',
+        order: 260,
+        description: 'LLM-based student assistant deployed on Hugging Face Spaces that delivers real-time answers, explanations, and learning support using natural language interaction.',
+        image: '/Img3.png',
+        codeUrl: 'https://huggingface.co/spaces/Hemanth789/LLM_student_assisstant/tree/main',
+        liveUrl: 'https://huggingface.co/spaces/Hemanth789/LLM_student_assisstant',
+        createdAt: new Date(Date.now() - 3000),
+      },
+      {
+        title: 'Ember & Oak — Fine Dining Restaurant',
+        category: 'Freelance Project',
+        projectType: 'big',
+        order: 240,
+        description: 'A premium fine-dining restaurant website featuring an elegant menu, booking integration, and a sophisticated aesthetic. Built as a freelance demo to showcase high-end UI/UX.',
+        image: '/restaurant_demo.png',
+        codeUrl: 'https://github.com/hemanth174/restaurant-client.git',
+        liveUrl: 'https://restaurant-demo117.netlify.app/',
+        createdAt: new Date(Date.now() - 4000),
+      },
+    ];
+
+    // Check if any default projects are missing from database
+    const missingDefaults = defaultProjects.filter((def) => 
+      !projects.some((p: any) => p.title && p.title.toLowerCase().includes(def.title.slice(0, 7).toLowerCase()))
+    );
+
+    if (missingDefaults.length > 0) {
+      await db.collection('projects').insertMany(missingDefaults);
+      projects = await db.collection('projects').find({}).toArray();
     }
+
+    // Sort projects: 'big' projects first, 'small' projects second, then by order/createdAt descending
+    projects.sort((a: any, b: any) => {
+      const getNormalizedType = (p: any) => {
+        if (p.projectType === 'small' || p.projectType === 'big') return p.projectType;
+        return p.category === 'LLM Notebook' ? 'small' : 'big';
+      };
+
+      const typeA = getNormalizedType(a) === 'big' ? 0 : 1;
+      const typeB = getNormalizedType(b) === 'big' ? 0 : 1;
+
+      if (typeA !== typeB) return typeA - typeB; // 'big' (0) before 'small' (1)
+      
+      const orderA = typeof a.order === 'number' ? a.order : 0;
+      const orderB = typeof b.order === 'number' ? b.order : 0;
+      if (orderA !== orderB) return orderB - orderA; // Higher order value first
+
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA; // Descending by createdAt
+    });
 
     return NextResponse.json(
       { projects },
@@ -96,6 +151,8 @@ export async function POST(request: NextRequest) {
 
     const title = sanitize(body.title, 150);
     const category = sanitize(body.category, 100);
+    const rawProjectType = sanitize(body.projectType, 20);
+    const projectType = rawProjectType === 'small' ? 'small' : 'big';
     const description = sanitize(body.description, 2000);
     // Base64 images can be large (up to 5MB), we sanitize but allow a higher limit.
     const image = sanitize(body.image, 10 * 1024 * 1024); 
@@ -116,6 +173,7 @@ export async function POST(request: NextRequest) {
     const newProject = {
       title,
       category,
+      projectType,
       description,
       image,
       codeUrl,

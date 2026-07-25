@@ -89,6 +89,7 @@ export default function AdminDashboard() {
     const [newProject, setNewProject] = useState({
         title: '',
         category: 'Personal Project',
+        projectType: 'big' as 'big' | 'small',
         description: '',
         image: '',
         codeUrl: '',
@@ -339,6 +340,7 @@ export default function AdminDashboard() {
             setNewProject({
                 title: '',
                 category: 'Personal Project',
+                projectType: 'big',
                 description: '',
                 image: '',
                 codeUrl: '',
@@ -1141,9 +1143,18 @@ export default function AdminDashboard() {
                                                 ) : (
                                                     <span className="text-zinc-600 text-xs font-mono">No Image</span>
                                                 )}
-                                                <span className="absolute top-2 right-2 px-2 py-0.5 bg-yellow-400 text-black text-[9px] font-bold rounded-full uppercase tracking-wider">
-                                                    {project.category}
-                                                </span>
+                                                <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                                                    <span className="px-2 py-0.5 bg-yellow-400 text-black text-[9px] font-bold rounded-full uppercase tracking-wider">
+                                                        {project.category}
+                                                    </span>
+                                                    <span className={`px-2 py-0.5 text-[8px] font-extrabold rounded-full uppercase tracking-wider ${
+                                                        (project.projectType === 'small' || project.category === 'LLM Notebook') 
+                                                            ? 'bg-zinc-800 text-zinc-300 border border-zinc-700' 
+                                                            : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                    }`}>
+                                                        {project.projectType === 'small' || project.category === 'LLM Notebook' ? 'Small Project' : 'Big Project'}
+                                                    </span>
+                                                </div>
                                             </div>
 
                                             {/* Content */}
@@ -1204,19 +1215,33 @@ export default function AdminDashboard() {
                                     />
                                 </div>
 
-                                <div>
-                                    <label className="block text-zinc-400 text-xs font-medium mb-1.5">Category *</label>
-                                    <select
-                                        value={newProject.category || 'Personal Project'}
-                                        onChange={(e) => setNewProject({ ...newProject, category: e.target.value })}
-                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4.5 py-2.5 text-white outline-none focus:border-yellow-400 transition-colors cursor-pointer"
-                                    >
-                                        <option value="Personal Project">Personal Project</option>
-                                        <option value="LLM Notebook">LLM Notebook</option>
-                                        <option value="StartUp">StartUp</option>
-                                        <option value="Freelance Project">Freelance Project</option>
-                                        <option value="Open Source">Open Source</option>
-                                    </select>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-zinc-400 text-xs font-medium mb-1.5">Category *</label>
+                                        <select
+                                            value={newProject.category || 'Personal Project'}
+                                            onChange={(e) => setNewProject({ ...newProject, category: e.target.value })}
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2.5 text-white text-xs outline-none focus:border-yellow-400 transition-colors cursor-pointer"
+                                        >
+                                            <option value="Personal Project">Personal Project</option>
+                                            <option value="LLM Notebook">LLM Notebook</option>
+                                            <option value="StartUp">StartUp</option>
+                                            <option value="Freelance Project">Freelance Project</option>
+                                            <option value="Open Source">Open Source</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-zinc-400 text-xs font-medium mb-1.5">Project Scale *</label>
+                                        <select
+                                            value={newProject.projectType || 'big'}
+                                            onChange={(e) => setNewProject({ ...newProject, projectType: e.target.value as 'big' | 'small' })}
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2.5 text-white text-xs outline-none focus:border-yellow-400 transition-colors cursor-pointer font-medium"
+                                        >
+                                            <option value="big">Big Project (Major)</option>
+                                            <option value="small">Small Project (Mini / Notebook)</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div>

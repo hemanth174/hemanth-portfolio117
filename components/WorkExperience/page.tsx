@@ -130,7 +130,7 @@ export const WorkExperience = () => {
                                             : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-500'
                                     }`}>
                                         <Briefcase size={14} />
-                                    </div>
+                                    </div>  
 
                                     {/* Card Container */}
                                     <div className="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-md transition-all duration-300 hover:-translate-y-1 hover:border-amber-600/60 hover:shadow-xl dark:border-zinc-900 dark:bg-zinc-950/60 dark:hover:border-[#FFDD00]/60 sm:p-6 md:p-8">
