@@ -272,7 +272,7 @@ const ProjectCard = ({ project, noHover }: { project: Project; noHover?: boolean
     const hasLive = isValidLiveUrl(project.liveUrl);
 
     return (
-        <div className={`win11-card group h-[350px] rounded-2xl transition-all duration-300`}>
+        <div className={` group h-[350px] rounded-2xl transition-all duration-300`}>
             {/* Inner card: overflow-hidden safe here since wrapper has no overflow clip */}
             <div className="flex flex-col h-full bg-white dark:bg-zinc-950/40 border-t-[3px] border-t-yellow-400 dark:border-t-yellow-300 rounded-[14px] overflow-hidden shadow-lg transition-all duration-300">
             <div className="relative w-full h-40 flex items-center justify-center overflow-hidden bg-zinc-100 dark:bg-black/40">
