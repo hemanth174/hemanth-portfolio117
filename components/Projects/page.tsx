@@ -272,7 +272,9 @@ const ProjectCard = ({ project, noHover }: { project: Project; noHover?: boolean
     const hasLive = isValidLiveUrl(project.liveUrl);
 
     return (
-        <div className={`group flex flex-col h-[350px] bg-white dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-900 border-t-3 border-t-yellow-400 dark:border-t-yellow-300 rounded-2xl overflow-hidden shadow-lg ${noHover ? '' : 'hover:shadow-[0_0_30px_rgba(255,221,0,0.1)]'} transition-all duration-300`}>
+        <div className={`win11-card group h-[350px] rounded-2xl transition-all duration-300`}>
+            {/* Inner card: overflow-hidden safe here since wrapper has no overflow clip */}
+            <div className="flex flex-col h-full bg-white dark:bg-zinc-950/40 border-t-[3px] border-t-yellow-400 dark:border-t-yellow-300 rounded-[14px] overflow-hidden shadow-lg transition-all duration-300">
             <div className="relative w-full h-40 flex items-center justify-center overflow-hidden bg-zinc-100 dark:bg-black/40">
                 {/* Category Badge */}
                 <div className="absolute top-3 right-3 z-20 transition-all duration-300 transform opacity-0 group-hover:opacity-100 translate-y-[-10px] group-hover:translate-y-0">
@@ -349,6 +351,7 @@ const ProjectCard = ({ project, noHover }: { project: Project; noHover?: boolean
                         <ExternalLink size={16} /> NO DEMO
                     </button>
                 )}
+            </div>
             </div>
         </div>
     );
@@ -577,6 +580,79 @@ function ProjectsList() {
                 .animate-folder-open {
                     animation: folderOpen 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                     transform-origin: top center;
+                }
+
+                /* ── Windows 11-style spinning border glow ─────────────────────────
+                   The outer .win11-card wrapper has NO overflow:hidden, so the
+                   ::before pseudo-element (which is 2px larger on all sides) is
+                   fully visible. The inner card div has overflow:hidden for content.
+
+                   On hover a conic-gradient rotates behind the card, producing the
+                   Win11 "spotlight sweeping around the edges" effect.
+                   @property is registered so Chrome can interpolate the angle.
+                ─────────────────────────────────────────────────────────────────── */
+
+                @property --win11-angle {
+                    syntax: '<angle>';
+                    initial-value: 0deg;
+                    inherits: false;
+                }
+
+                /* Outer wrapper — glow layer lives here, no overflow clip */
+                .win11-card {
+                    position: relative;
+                    border-radius: 1rem;        /* matches rounded-2xl */
+                    /* default resting state: subtle static border */
+                    background: transparent;
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                }
+
+                /* The animated glow ring — sits BEHIND the inner card */
+                .win11-card::before {
+                    content: '';
+                    position: absolute;
+                    inset: -2px;                /* bleeds 2px outside wrapper */
+                    border-radius: inherit;
+                    z-index: 0;                 /* behind inner card (z-index:1) */
+                    opacity: 0;
+                    transition: opacity 0.4s ease;
+
+                    /* Conic gradient: only 90° arc is visible — rest is transparent */
+                    background: conic-gradient(
+                        from var(--win11-angle, 0deg) at 50% 50%,
+                        transparent    0deg,
+                        transparent   50deg,
+                        #fde047       90deg,     /* yellow-300 */
+                        #facc15      120deg,     /* yellow-400 */
+                        #f59e0b      150deg,     /* amber-400  */
+                        transparent  180deg,
+                        transparent  360deg
+                    );
+                }
+
+                /* Inner card: position it above the ::before glow */
+                .win11-card > div {
+                    position: relative;
+                    z-index: 1;
+                }
+
+                /* Activate glow on hover + spin the angle */
+                .win11-card:hover::before {
+                    opacity: 1;
+                    animation: win11-spin 2.5s linear infinite;
+                }
+
+                /* Animate the custom angle property */
+                @keyframes win11-spin {
+                    from { --win11-angle: 0deg;   }
+                    to   { --win11-angle: 360deg; }
+                }
+
+                /* Lift + stronger shadow on hover */
+                .win11-card:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.25),
+                                0 16px 48px rgba(250, 204, 21, 0.18);
                 }
             `}</style>
         </section>
