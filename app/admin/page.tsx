@@ -272,6 +272,28 @@ export default function AdminDashboard() {
         }
     }, [adminKey]);
 
+    const handleDeleteContact = async (id: string) => {
+        if (!window.confirm('Are you sure you want to delete this contact message? This action cannot be undone.')) {
+            return;
+        }
+
+        setError('');
+        try {
+            const res = await fetch(`/api/contact?id=${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'x-admin-key': adminKey,
+                },
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to delete contact message');
+
+            setContacts((prev) => prev.filter((c) => c._id !== id));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to delete contact message');
+        }
+    };
+
     const fetchVisitors = useCallback(async () => {
         setVisitorsLoading(true);
         setError('');
@@ -986,9 +1008,18 @@ export default function AdminDashboard() {
                                                     </a>
                                                 </div>
                                             </div>
-                                            <span className="text-xs text-zinc-600 whitespace-nowrap">
-                                                {formatDate(contact.createdAt)}
-                                            </span>
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-xs text-zinc-600 whitespace-nowrap">
+                                                    {formatDate(contact.createdAt)}
+                                                </span>
+                                                <button
+                                                    onClick={() => handleDeleteContact(contact._id)}
+                                                    className="px-2.5 py-1 bg-red-950/40 hover:bg-red-600 hover:text-white text-red-400 text-xs font-semibold rounded transition-all cursor-pointer"
+                                                    title="Delete message"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
                                         </div>
                                         <p className="text-zinc-300 text-sm leading-relaxed pl-[52px]">
                                             {contact.message}

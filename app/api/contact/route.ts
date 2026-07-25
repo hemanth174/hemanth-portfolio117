@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
+import { ObjectId } from 'mongodb';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -122,5 +123,41 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, message: 'Message sent successfully!' });
   } catch {
     return NextResponse.json({ error: 'Failed to send message. Please try again later.' }, { status: 500 });
+  }
+}
+
+// DELETE - Delete a contact message (Admin only)
+export async function DELETE(request: NextRequest) {
+  const authKey = request.headers.get('x-admin-key');
+  if (!authKey || authKey !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Contact ID is required.' }, { status: 400 });
+    }
+
+    const { db } = await connectToDatabase();
+    let objectId: ObjectId;
+    try {
+      objectId = new ObjectId(id);
+    } catch {
+      return NextResponse.json({ error: 'Invalid contact ID format.' }, { status: 400 });
+    }
+
+    const result = await db.collection('contacts').deleteOne({ _id: objectId });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: 'Contact message not found.' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('DELETE Contact Error:', err);
+    return NextResponse.json({ error: 'Failed to delete contact message.' }, { status: 500 });
   }
 }
