@@ -31,9 +31,20 @@ function markHydrated() {
 
 export const HomeSection = () => {
     const [isScrolled, setIsScrolled] = useState(false);
+    const [activeSection, setActiveSection] = useState<string>('');
     const { theme, setTheme } = useTheme();
     const hydrated = useSyncExternalStore(subscribeToHydration, getHydrationSnapshot, getServerHydrationSnapshot);
     const isDarkTheme = hydrated ? theme === 'dark' : true;
+
+    const navItems = [
+        { id: 'section2', label: 'ABOUT' },
+        { id: 'section3', label: 'SKILLS' },
+        { id: 'section4', label: 'PROJECTS' },
+        { id: 'section5', label: 'EXPERIENCE' },
+        { id: 'section6', label: 'CERTIFICATION' },
+        { id: 'section7', label: 'EVENTS' },
+        { id: 'section8', label: 'CONTACT' },
+    ];
 
     useEffect(() => {
         markHydrated();
@@ -43,12 +54,44 @@ export const HomeSection = () => {
             } else {
                 setIsScrolled(false);
             }
+
+            const sections = ['section2', 'section3', 'section4', 'section5', 'section6', 'section7', 'section8'];
+            const scrollPosition = window.scrollY + 140;
+
+            let currentSection = '';
+            for (const sectionId of sections) {
+                const el = document.getElementById(sectionId);
+                if (el) {
+                    const top = el.offsetTop;
+                    const height = el.offsetHeight;
+                    if (scrollPosition >= top && scrollPosition < top + height) {
+                        currentSection = sectionId;
+                        break;
+                    }
+                }
+            }
+
+            // Bottom of page fallback for Contact section
+            if ((window.innerHeight + Math.round(window.scrollY)) >= document.body.offsetHeight - 50) {
+                currentSection = 'section8';
+            }
+
+            setActiveSection(currentSection);
         };
 
-        window.addEventListener('scroll', handleScroll);
+        window.addEventListener('scroll', handleScroll, { passive: true });
         handleScroll();
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+        e.preventDefault();
+        const el = document.getElementById(id);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+            setActiveSection(id);
+        }
+    };
 
     return (
         <>
@@ -76,14 +119,29 @@ export const HomeSection = () => {
                     </a>
                     
                     <div className="relative flex w-full md:w-auto items-center gap-4 sm:gap-6 mt-3 md:mt-0">
-                        <div className="flex min-w-0 flex-1 flex-wrap justify-center gap-x-3 gap-y-2 pr-10 sm:gap-x-4 md:gap-5 md:pr-0 tracking-widest text-zinc-500 dark:text-gray-400 text-[10px] sm:text-xs md:text-sm font-semibold">
-                            <a href="#section2"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>ABOUT</p></a>
-                            <a href="#section3"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>SKILLS</p> </a>
-                            <a href="#section4"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>PROJECTS</p> </a>
-                            <a href="#section5"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>EXPERIENCE</p> </a>
-                            <a href="#section6"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>CERTIFICATION</p> </a>
-                            <a href="#section7"> <p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>EVENTS</p> </a>
-                            <a href="#section8"><p className={`${transition} hover:text-zinc-900 dark:hover:text-white`}>CONTACT</p></a>
+                        <div className="flex min-w-0 flex-1 flex-wrap justify-center gap-x-3 gap-y-2 pr-10 sm:gap-x-4 md:gap-5 md:pr-0 tracking-widest text-[10px] sm:text-xs md:text-sm font-semibold">
+                            {navItems.map((item) => {
+                                const isActive = activeSection === item.id;
+                                return (
+                                    <a
+                                        key={item.id}
+                                        href={`#${item.id}`}
+                                        onClick={(e) => handleNavClick(e, item.id)}
+                                        className="group relative py-1 px-1 transition-all"
+                                    >
+                                        <p className={`${transition} relative z-10 tracking-widest transition-all duration-300 ${
+                                            isActive 
+                                                ? 'text-amber-600 dark:text-yellow-300 font-black scale-105 drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]' 
+                                                : 'text-zinc-500 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white'
+                                        }`}>
+                                            {item.label}
+                                        </p>
+                                        <span className={`absolute bottom-0 left-0 w-full h-[2.5px] bg-amber-600 dark:bg-yellow-300 rounded-full transition-all duration-300 ${
+                                            isActive ? 'opacity-100 scale-x-100 shadow-[0_0_8px_#facc15]' : 'opacity-0 scale-x-0 group-hover:opacity-60 group-hover:scale-x-75'
+                                        }`} />
+                                    </a>
+                                );
+                            })}
                         </div>
                         
                         {/* Premium Theme Toggle Button */}

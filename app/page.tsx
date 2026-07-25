@@ -22,19 +22,19 @@ export default function Home() {
       <div id="section3" className="scroll-mt-20">
         <Skills />
       </div>
-      <div id="section4" className="">
+      <div id="section4" className="scroll-mt-20">
         <Projects />
       </div>
-      <div id="section5">
+      <div id="section5" className="scroll-mt-20">
         <WorkExperience />
       </div>
-      <div id="section6">
+      <div id="section6" className="scroll-mt-20">
         <Experience />
       </div>
-      <div id="section7">
+      <div id="section7" className="scroll-mt-20">
         <Events />
       </div>
-      <div id="section8">
+      <div id="section8" className="scroll-mt-20">
         <Contact />
       </div>
     </>
