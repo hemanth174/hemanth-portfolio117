@@ -178,3 +178,66 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to delete certificate.' }, { status: 500 });
   }
 }
+
+// PUT - Update a certificate (Admin only)
+export async function PUT(request: NextRequest) {
+  const authKey = request.headers.get('x-admin-key');
+  if (!authKey || authKey !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    let body: Record<string, unknown>;
+    try {
+      body = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+    }
+
+    const id = body._id || body.id;
+    if (!id || typeof id !== 'string') {
+      return NextResponse.json({ error: 'Certificate ID is required.' }, { status: 400 });
+    }
+
+    const title = sanitize(body.title, 200);
+    const img = sanitize(body.img, 10 * 1024 * 1024);
+
+    if (!title || title.length < 2) {
+      return NextResponse.json({ error: 'Title must be at least 2 characters.' }, { status: 400 });
+    }
+    if (!img) {
+      return NextResponse.json({ error: 'Certificate image is required.' }, { status: 400 });
+    }
+
+    const { db } = await connectToDatabase();
+    let objectId: ObjectId;
+    try {
+      objectId = new ObjectId(id);
+    } catch {
+      return NextResponse.json({ error: 'Invalid certificate ID format.' }, { status: 400 });
+    }
+
+    const updateDoc = {
+      title,
+      img,
+    };
+
+    const result = await db.collection('certificates').updateOne(
+      { _id: objectId },
+      { $set: updateDoc }
+    );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ error: 'Certificate not found.' }, { status: 404 });
+    }
+
+    // Invalidate Next.js static cache immediately
+    revalidatePath('/api/certificates');
+    revalidatePath('/');
+
+    return NextResponse.json({ success: true, certificate: { ...updateDoc, _id: id } });
+  } catch (err) {
+    console.error('PUT Certificates Error:', err);
+    return NextResponse.json({ error: 'Failed to update certificate.' }, { status: 500 });
+  }
+}

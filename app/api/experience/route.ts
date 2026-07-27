@@ -141,3 +141,91 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to delete experience entry.' }, { status: 500 });
   }
 }
+
+// PUT - Update an existing work experience (Admin only)
+export async function PUT(request: NextRequest) {
+  const authKey = request.headers.get('x-admin-key');
+  if (!authKey || authKey !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    let body: Record<string, unknown>;
+    try {
+      body = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+    }
+
+    const id = body._id || body.id;
+    if (!id || typeof id !== 'string') {
+      return NextResponse.json({ error: 'Experience ID is required.' }, { status: 400 });
+    }
+
+    const company = sanitize(body.company, 200);
+    const role = sanitize(body.role, 200);
+    const duration = sanitize(body.duration, 100);
+    const isCurrent = Boolean(body.isCurrent);
+    const location = sanitize(body.location, 200);
+    const description = sanitize(body.description, 3000);
+    const link = sanitize(body.link, 500);
+    const proof = sanitize(body.proof, 15 * 1024 * 1024);
+
+    let skills: string[] = [];
+    if (Array.isArray(body.skills)) {
+      skills = (body.skills as unknown[]).map((s) => sanitize(s, 50)).filter(Boolean).slice(0, 12);
+    } else if (typeof body.skills === 'string') {
+      skills = body.skills.split(',').map((s) => sanitize(s.trim(), 50)).filter(Boolean).slice(0, 12);
+    }
+
+    if (!company || company.length < 2) {
+      return NextResponse.json({ error: 'Company name must be at least 2 characters.' }, { status: 400 });
+    }
+    if (!role || role.length < 2) {
+      return NextResponse.json({ error: 'Role title must be at least 2 characters.' }, { status: 400 });
+    }
+    if (!duration) {
+      return NextResponse.json({ error: 'Duration is required.' }, { status: 400 });
+    }
+    if (!description || description.length < 5) {
+      return NextResponse.json({ error: 'Description must be at least 5 characters.' }, { status: 400 });
+    }
+
+    const { db } = await connectToDatabase();
+    let objectId: ObjectId;
+    try {
+      objectId = new ObjectId(id);
+    } catch {
+      return NextResponse.json({ error: 'Invalid experience ID format.' }, { status: 400 });
+    }
+
+    const updateDoc = {
+      company,
+      role,
+      duration,
+      isCurrent,
+      location,
+      description,
+      skills,
+      link,
+      proof,
+    };
+
+    const result = await db.collection('experiences').updateOne(
+      { _id: objectId },
+      { $set: updateDoc }
+    );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ error: 'Experience entry not found.' }, { status: 404 });
+    }
+
+    revalidatePath('/api/experience');
+    revalidatePath('/');
+
+    return NextResponse.json({ success: true, experience: { ...updateDoc, _id: id } });
+  } catch (err) {
+    console.error('PUT Experience Error:', err);
+    return NextResponse.json({ error: 'Failed to update experience entry.' }, { status: 500 });
+  }
+}

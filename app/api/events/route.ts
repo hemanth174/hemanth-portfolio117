@@ -194,3 +194,98 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to delete event.' }, { status: 500 });
   }
 }
+
+// PUT - Update an event (Admin only)
+export async function PUT(request: NextRequest) {
+  const authKey = request.headers.get('x-admin-key');
+  if (!authKey || authKey !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    let body: Record<string, unknown>;
+    try {
+      body = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+    }
+
+    const id = body._id || body.id;
+    if (!id || typeof id !== 'string') {
+      return NextResponse.json({ error: 'Event ID is required.' }, { status: 400 });
+    }
+
+    const title = sanitize(body.title, 200);
+    const type = sanitize(body.type, 50) as 'college' | 'off-college';
+    const date = sanitize(body.date, 100);
+    const description = sanitize(body.description, 2000);
+    const story = sanitize(body.story, 5000);
+    const location = sanitize(body.location, 200);
+    const link = sanitize(body.link, 500);
+    const image = sanitize(body.image, 10 * 1024 * 1024);
+
+    // Tags: array of strings
+    let tags: string[] = [];
+    if (Array.isArray(body.tags)) {
+      tags = (body.tags as unknown[])
+        .map((t) => sanitize(t, 50))
+        .filter(Boolean)
+        .slice(0, 10);
+    } else if (typeof body.tags === 'string') {
+      tags = body.tags.split(',').map((t) => sanitize(t.trim(), 50)).filter(Boolean).slice(0, 10);
+    }
+
+    if (!title || title.length < 2) {
+      return NextResponse.json({ error: 'Title must be at least 2 characters.' }, { status: 400 });
+    }
+    if (type !== 'college' && type !== 'off-college') {
+      return NextResponse.json({ error: 'Invalid event type. Must be "college" or "off-college".' }, { status: 400 });
+    }
+    if (!date) {
+      return NextResponse.json({ error: 'Date is required.' }, { status: 400 });
+    }
+    if (!description || description.length < 5) {
+      return NextResponse.json({ error: 'Description must be at least 5 characters.' }, { status: 400 });
+    }
+    if (!location) {
+      return NextResponse.json({ error: 'Location is required.' }, { status: 400 });
+    }
+
+    const { db } = await connectToDatabase();
+    let objectId: ObjectId;
+    try {
+      objectId = new ObjectId(id);
+    } catch {
+      return NextResponse.json({ error: 'Invalid event ID format.' }, { status: 400 });
+    }
+
+    const updateDoc = {
+      title,
+      type,
+      date,
+      description,
+      story,
+      tags,
+      location,
+      image,
+      link,
+    };
+
+    const result = await db.collection('events').updateOne(
+      { _id: objectId },
+      { $set: updateDoc }
+    );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
+    }
+
+    revalidatePath('/api/events');
+    revalidatePath('/');
+
+    return NextResponse.json({ success: true, event: { ...updateDoc, _id: id } });
+  } catch (err) {
+    console.error('PUT Event Error:', err);
+    return NextResponse.json({ error: 'Failed to update event.' }, { status: 500 });
+  }
+}

@@ -233,3 +233,86 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to delete project.' }, { status: 500 });
   }
 }
+
+// PUT - Update an existing project (Admin only)
+export async function PUT(request: NextRequest) {
+  const authKey = request.headers.get('x-admin-key');
+  if (!authKey || authKey !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    let body: Record<string, unknown>;
+    try {
+      body = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+    }
+
+    const id = body._id || body.id;
+    if (!id || typeof id !== 'string') {
+      return NextResponse.json({ error: 'Project ID is required.' }, { status: 400 });
+    }
+
+    const title = sanitize(body.title, 150);
+    const category = sanitize(body.category, 100);
+    const rawProjectType = sanitize(body.projectType, 20);
+    const projectType = rawProjectType === 'small' ? 'small' : 'big';
+    const description = sanitize(body.description, 2000);
+    // Base64 images can be large (up to 5MB), we sanitize but allow a higher limit.
+    const image = sanitize(body.image, 10 * 1024 * 1024); 
+    const codeUrl = sanitize(body.codeUrl, 500);
+    const liveUrl = sanitize(body.liveUrl, 500);
+    const order = typeof body.order === 'number' ? body.order : undefined;
+
+    if (!title || title.length < 2) {
+      return NextResponse.json({ error: 'Title must be at least 2 characters.' }, { status: 400 });
+    }
+    if (!category) {
+      return NextResponse.json({ error: 'Category is required.' }, { status: 400 });
+    }
+    if (!description || description.length < 5) {
+      return NextResponse.json({ error: 'Description must be at least 5 characters.' }, { status: 400 });
+    }
+
+    const { db } = await connectToDatabase();
+    let objectId: ObjectId;
+    try {
+      objectId = new ObjectId(id);
+    } catch {
+      return NextResponse.json({ error: 'Invalid project ID format.' }, { status: 400 });
+    }
+
+    const updateDoc: Record<string, any> = {
+      title,
+      category,
+      projectType,
+      description,
+      image,
+      codeUrl,
+      liveUrl,
+    };
+
+    if (order !== undefined) {
+      updateDoc.order = order;
+    }
+
+    const result = await db.collection('projects').updateOne(
+      { _id: objectId },
+      { $set: updateDoc }
+    );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
+    }
+
+    // Invalidate Next.js static cache immediately
+    revalidatePath('/api/projects');
+    revalidatePath('/');
+
+    return NextResponse.json({ success: true, project: { ...updateDoc, _id: id } });
+  } catch (err) {
+    console.error('PUT Projects Error:', err);
+    return NextResponse.json({ error: 'Failed to update project.' }, { status: 500 });
+  }
+}

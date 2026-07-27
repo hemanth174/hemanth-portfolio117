@@ -191,3 +191,88 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to delete workflow.' }, { status: 500 });
   }
 }
+
+// PUT - Update an existing workflow (Admin only)
+export async function PUT(request: NextRequest) {
+  const authKey = request.headers.get('x-admin-key');
+  if (!authKey || authKey !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    let body: Record<string, unknown>;
+    try {
+      body = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+    }
+
+    const id = body._id || body.id;
+    if (!id || typeof id !== 'string') {
+      return NextResponse.json({ error: 'Workflow ID is required.' }, { status: 400 });
+    }
+
+    const title = sanitize(body.title, 200);
+    const description = sanitize(body.description, 2000);
+    const category = sanitize(body.category, 100);
+    const thumbnail = sanitize(body.thumbnail, 10 * 1024 * 1024);
+
+    let tags: string[] = [];
+    if (Array.isArray(body.tags)) {
+      tags = (body.tags as unknown[]).map((t) => sanitize(t, 50)).filter(Boolean).slice(0, 10);
+    } else if (typeof body.tags === 'string') {
+      tags = body.tags.split(',').map((t) => sanitize(t.trim(), 50)).filter(Boolean).slice(0, 10);
+    }
+
+    let workflowJson = '';
+    let nodeCount = 0;
+    if (typeof body.workflowJson === 'string' && body.workflowJson.trim()) {
+      try {
+        const parsed = JSON.parse(body.workflowJson);
+        workflowJson = JSON.stringify(parsed);
+        if (Array.isArray(parsed?.nodes)) nodeCount = parsed.nodes.length;
+        else if (Array.isArray(parsed?.workflow?.nodes)) nodeCount = parsed.workflow.nodes.length;
+      } catch {
+        return NextResponse.json({ error: 'Invalid n8n JSON. Please upload a valid workflow file.' }, { status: 400 });
+      }
+    }
+
+    const { db } = await connectToDatabase();
+    let objectId: ObjectId;
+    try {
+      objectId = new ObjectId(id);
+    } catch {
+      return NextResponse.json({ error: 'Invalid workflow ID format.' }, { status: 400 });
+    }
+
+    const updateDoc: Record<string, any> = {
+      title,
+      description,
+      category: category || 'Automation',
+      tags,
+      thumbnail,
+    };
+
+    if (workflowJson) {
+      updateDoc.workflowJson = workflowJson;
+      updateDoc.nodeCount = nodeCount;
+    }
+
+    const result = await db.collection('workflows').updateOne(
+      { _id: objectId },
+      { $set: updateDoc }
+    );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ error: 'Workflow not found.' }, { status: 404 });
+    }
+
+    revalidatePath('/api/workflows');
+    revalidatePath('/');
+
+    return NextResponse.json({ success: true, workflow: { ...updateDoc, _id: id, workflowJson: undefined } });
+  } catch (err) {
+    console.error('PUT Workflow Error:', err);
+    return NextResponse.json({ error: 'Failed to update workflow.' }, { status: 500 });
+  }
+}

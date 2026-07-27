@@ -99,6 +99,7 @@ export default function AdminDashboard() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [editingProject, setEditingProject] = useState<any>(null);
 
     // Certification state
     const [certifications, setCertifications] = useState<any[]>([]);
@@ -108,6 +109,7 @@ export default function AdminDashboard() {
     const [isSubmittingCert, setIsSubmittingCert] = useState(false);
     const [isDraggingCert, setIsDraggingCert] = useState(false);
     const certFileInputRef = useRef<HTMLInputElement>(null);
+    const [editingCert, setEditingCert] = useState<any>(null);
 
     // Event state
     const [events, setEvents] = useState<any[]>([]);
@@ -125,6 +127,7 @@ export default function AdminDashboard() {
     const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
     const [isDraggingEvent, setIsDraggingEvent] = useState(false);
     const eventFileInputRef = useRef<HTMLInputElement>(null);
+    const [editingEvent, setEditingEvent] = useState<any>(null);
 
     // Workflow state
     const [workflows, setWorkflows] = useState<any[]>([]);
@@ -142,6 +145,7 @@ export default function AdminDashboard() {
     const [isDraggingWorkflow, setIsDraggingWorkflow] = useState(false);
     const workflowJsonRef = useRef<HTMLInputElement>(null);
     const workflowThumbRef = useRef<HTMLInputElement>(null);
+    const [editingWorkflow, setEditingWorkflow] = useState<any>(null);
 
     // Work Experience state
     const [workExperiences, setWorkExperiences] = useState<any[]>([]);
@@ -336,40 +340,28 @@ export default function AdminDashboard() {
             setError('Please fill in all required fields (Title, Category, and Description).');
             return;
         }
-
         setIsSubmitting(true);
         setError('');
         try {
+            const isEdit = !!editingProject;
             const res = await fetch('/api/projects', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-key': adminKey,
-                },
-                body: JSON.stringify(newProject),
+                method: isEdit ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+                body: JSON.stringify(isEdit ? { ...newProject, _id: editingProject._id } : newProject),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to add project');
-            
+            if (!res.ok) throw new Error(data.error || (isEdit ? 'Failed to update project' : 'Failed to add project'));
             setProjects((prev) => {
-                const updated = [data.project, ...prev];
-                try {
-                    localStorage.setItem('portfolio_projects_cache', JSON.stringify(updated));
-                } catch (e) {}
+                const updated = isEdit
+                    ? prev.map((p) => (p._id === editingProject._id ? { ...p, ...newProject } : p))
+                    : [data.project, ...prev];
+                try { localStorage.setItem('portfolio_projects_cache', JSON.stringify(updated)); } catch (e) {}
                 return updated;
             });
-
-            setNewProject({
-                title: '',
-                category: 'Personal Project',
-                projectType: 'big',
-                description: '',
-                image: '',
-                codeUrl: '',
-                liveUrl: ''
-            });
+            setNewProject({ title: '', category: 'Personal Project', projectType: 'big', description: '', image: '', codeUrl: '', liveUrl: '' });
+            setEditingProject(null);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add project');
+            setError(err instanceof Error ? err.message : 'Failed to save project');
         } finally {
             setIsSubmitting(false);
         }
@@ -427,32 +419,28 @@ export default function AdminDashboard() {
             setError('Please provide a title and image/URL for the certificate.');
             return;
         }
-
         setIsSubmittingCert(true);
         setError('');
         try {
+            const isEdit = !!editingCert;
             const res = await fetch('/api/certificates', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-key': adminKey,
-                },
-                body: JSON.stringify(newCert),
+                method: isEdit ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+                body: JSON.stringify(isEdit ? { ...newCert, _id: editingCert._id } : newCert),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to add certificate');
-
+            if (!res.ok) throw new Error(data.error || 'Failed to save certificate');
             setCertifications((prev) => {
-                const updated = [...prev, data.certificate];
-                try {
-                    localStorage.setItem('portfolio_certificates_cache', JSON.stringify(updated));
-                } catch (e) {}
+                const updated = isEdit
+                    ? prev.map((c) => (c._id === editingCert._id ? { ...c, ...newCert } : c))
+                    : [...prev, data.certificate];
+                try { localStorage.setItem('portfolio_certificates_cache', JSON.stringify(updated)); } catch (e) {}
                 return updated;
             });
-
             setNewCert({ title: '', img: '' });
+            setEditingCert(null);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add certificate');
+            setError(err instanceof Error ? err.message : 'Failed to save certificate');
         } finally {
             setIsSubmittingCert(false);
         }
@@ -510,40 +498,28 @@ export default function AdminDashboard() {
             setError('Please provide a title, date, description, and location for the event.');
             return;
         }
-
         setIsSubmittingEvent(true);
         setError('');
         try {
+            const isEdit = !!editingEvent;
             const res = await fetch('/api/events', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-key': adminKey,
-                },
-                body: JSON.stringify(newEvent),
+                method: isEdit ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+                body: JSON.stringify(isEdit ? { ...newEvent, _id: editingEvent._id } : newEvent),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to add event');
-
+            if (!res.ok) throw new Error(data.error || 'Failed to save event');
             setEvents((prev) => {
-                const updated = [data.event, ...prev];
-                try {
-                    localStorage.setItem('portfolio_events_cache', JSON.stringify(updated));
-                } catch (e) {}
+                const updated = isEdit
+                    ? prev.map((ev) => (ev._id === editingEvent._id ? { ...ev, ...newEvent } : ev))
+                    : [data.event, ...prev];
+                try { localStorage.setItem('portfolio_events_cache', JSON.stringify(updated)); } catch (e) {}
                 return updated;
             });
-
-            setNewEvent({
-                title: '',
-                type: 'college',
-                date: '',
-                description: '',
-                location: '',
-                image: '',
-                link: ''
-            });
+            setNewEvent({ title: '', type: 'college', date: '', description: '', location: '', image: '', link: '' });
+            setEditingEvent(null);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add event');
+            setError(err instanceof Error ? err.message : 'Failed to save event');
         } finally {
             setIsSubmittingEvent(false);
         }
@@ -595,26 +571,35 @@ export default function AdminDashboard() {
 
     const handleAddWorkflow = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newWorkflow.title.trim() || !newWorkflow.description.trim() || !newWorkflow.workflowJson.trim()) {
-            setError('Title, description, and a valid n8n JSON file are required.');
+        if (!newWorkflow.title.trim() || !newWorkflow.description.trim()) {
+            setError('Title and description are required.');
+            return;
+        }
+        if (!editingWorkflow && !newWorkflow.workflowJson.trim()) {
+            setError('A valid n8n JSON file is required for new workflows.');
             return;
         }
         setIsSubmittingWorkflow(true);
         setError('');
         try {
+            const isEdit = !!editingWorkflow;
             const res = await fetch('/api/workflows', {
-                method: 'POST',
+                method: isEdit ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
-                body: JSON.stringify(newWorkflow),
+                body: JSON.stringify(isEdit ? { ...newWorkflow, _id: editingWorkflow._id } : newWorkflow),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to add workflow');
-            setWorkflows((prev) => [data.workflow, ...prev]);
+            if (!res.ok) throw new Error(data.error || 'Failed to save workflow');
+            setWorkflows((prev) => isEdit
+                ? prev.map((w) => (w._id === editingWorkflow._id ? { ...w, ...newWorkflow } : w))
+                : [data.workflow, ...prev]
+            );
             setNewWorkflow({ title: '', description: '', category: 'Automation', tags: '', thumbnail: '', workflowJson: '' });
+            setEditingWorkflow(null);
             if (workflowJsonRef.current) workflowJsonRef.current.value = '';
             if (workflowThumbRef.current) workflowThumbRef.current.value = '';
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add workflow');
+            setError(err instanceof Error ? err.message : 'Failed to save workflow');
         } finally {
             setIsSubmittingWorkflow(false);
         }
@@ -652,6 +637,8 @@ export default function AdminDashboard() {
         }
     }, []);
 
+    const [editingExperience, setEditingExperience] = useState<any>(null);
+
     const handleAddExperience = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newExperience.company.trim() || !newExperience.role.trim() || !newExperience.duration.trim() || !newExperience.description.trim()) {
@@ -661,18 +648,23 @@ export default function AdminDashboard() {
         setIsSubmittingExperience(true);
         setError('');
         try {
+            const isEdit = !!editingExperience;
             const res = await fetch('/api/experience', {
-                method: 'POST',
+                method: isEdit ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
-                body: JSON.stringify(newExperience),
+                body: JSON.stringify(isEdit ? { ...newExperience, _id: editingExperience._id } : newExperience),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to add work experience');
-            setWorkExperiences((prev) => [data.experience, ...prev]);
+            if (!res.ok) throw new Error(data.error || 'Failed to save work experience');
+            setWorkExperiences((prev) => isEdit
+                ? prev.map((exp) => (exp._id === editingExperience._id ? { ...exp, ...newExperience } : exp))
+                : [data.experience, ...prev]
+            );
             setNewExperience({ company: '', role: '', duration: '', isCurrent: false, location: '', description: '', skills: '', link: '', proof: '' });
+            setEditingExperience(null);
             if (experienceProofRef.current) experienceProofRef.current.value = '';
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add work experience');
+            setError(err instanceof Error ? err.message : 'Failed to save work experience');
         } finally {
             setIsSubmittingExperience(false);
         }
@@ -1212,12 +1204,22 @@ export default function AdminDashboard() {
                                                             </a>
                                                         )}
                                                     </div>
-                                                    <button
-                                                        onClick={() => handleDeleteProject(project._id)}
-                                                        className="px-2.5 py-1 bg-red-950/40 hover:bg-red-600 hover:text-white text-red-400 text-xs font-semibold rounded transition-all cursor-pointer"
-                                                    >
-                                                        Delete
-                                                    </button>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => { setEditingProject(project); setNewProject({ title: project.title, category: project.category, projectType: project.projectType || 'big', description: project.description, image: project.image || '', codeUrl: project.codeUrl || '', liveUrl: project.liveUrl || '' }); }}
+                                                            className="px-2.5 py-1 bg-blue-950/40 hover:bg-blue-600 hover:text-white text-blue-400 text-xs font-semibold rounded transition-all cursor-pointer flex items-center gap-1"
+                                                            title="Edit project"
+                                                        >
+                                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteProject(project._id)}
+                                                            className="px-2.5 py-1 bg-red-950/40 hover:bg-red-600 hover:text-white text-red-400 text-xs font-semibold rounded transition-all cursor-pointer"
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1226,10 +1228,11 @@ export default function AdminDashboard() {
                             )}
                         </div>
 
-                        {/* Add Project Form (right/narrower) */}
+                        {/* Add/Edit Project Form (right/narrower) */}
                         <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-6 h-fit space-y-6">
-                            <div>
-                                <h2 className="text-xl font-semibold text-white">Add New Project</h2>
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xl font-semibold text-white">{editingProject ? 'Edit Project' : 'Add New Project'}</h2>
+                                {editingProject && <button onClick={() => { setEditingProject(null); setNewProject({ title: '', category: 'Personal Project', projectType: 'big', description: '', image: '', codeUrl: '', liveUrl: '' }); }} className="text-xs text-zinc-500 hover:text-white transition-colors cursor-pointer">✕ Cancel Edit</button>}
                                 <p className="text-zinc-500 text-xs mt-1">Publish a new project to your portfolio</p>
                             </div>
 
@@ -1473,15 +1476,23 @@ export default function AdminDashboard() {
                                                 <span className="text-[10px] text-zinc-500 font-mono">
                                                     {cert.createdAt ? formatDate(cert.createdAt) : 'Static'}
                                                 </span>
-                                                <button
-                                                    onClick={() => handleDeleteCertification(cert._id || cert.id)}
-                                                    className="text-xs text-red-500 hover:text-red-400 transition-colors flex items-center gap-1 cursor-pointer font-bold font-mono"
-                                                >
-                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                    DELETE
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => { setEditingCert(cert); setNewCert({ title: cert.title, img: cert.img }); }}
+                                                        className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 cursor-pointer font-bold font-mono"
+                                                        title="Edit certificate"
+                                                    >
+                                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                        EDIT
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteCertification(cert._id || cert.id)}
+                                                        className="text-xs text-red-500 hover:text-red-400 transition-colors flex items-center gap-1 cursor-pointer font-bold font-mono"
+                                                    >
+                                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                        DELETE
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -1489,9 +1500,12 @@ export default function AdminDashboard() {
                             )}
                         </div>
 
-                        {/* Add Certification Form */}
+                        {/* Add/Edit Certification Form */}
                         <div className="order-1 lg:order-2">
-                            <h2 className="text-xl font-semibold mb-6">Add New Certificate</h2>
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-semibold">{editingCert ? 'Edit Certificate' : 'Add New Certificate'}</h2>
+                                {editingCert && <button onClick={() => { setEditingCert(null); setNewCert({ title: '', img: '' }); }} className="text-xs text-zinc-500 hover:text-white transition-colors cursor-pointer">✕ Cancel</button>}
+                            </div>
                             <form onSubmit={handleAddCertification} className="bg-zinc-950/40 border border-zinc-900 rounded-xl p-5 md:p-6 space-y-5">
                                 <div>
                                     <label className="block text-zinc-400 text-xs font-medium mb-1.5">Certificate Title *</label>
@@ -1688,15 +1702,23 @@ export default function AdminDashboard() {
                                                 <span className="text-[9px] text-zinc-500 font-mono">
                                                     {ev.createdAt ? formatDate(ev.createdAt) : 'Static'}
                                                 </span>
-                                                <button
-                                                    onClick={() => handleDeleteEvent(ev._id || ev.id)}
-                                                    className="text-xs text-red-500 hover:text-red-400 transition-colors flex items-center gap-1 cursor-pointer font-bold font-mono"
-                                                >
-                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                    DELETE
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => { setEditingEvent(ev); setNewEvent({ title: ev.title, type: ev.type, date: ev.date, description: ev.description, location: ev.location, image: ev.image || '', link: ev.link || '' }); }}
+                                                        className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 cursor-pointer font-bold font-mono"
+                                                        title="Edit event"
+                                                    >
+                                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                        EDIT
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteEvent(ev._id || ev.id)}
+                                                        className="text-xs text-red-500 hover:text-red-400 transition-colors flex items-center gap-1 cursor-pointer font-bold font-mono"
+                                                    >
+                                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                        DELETE
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -1704,9 +1726,12 @@ export default function AdminDashboard() {
                             )}
                         </div>
 
-                        {/* Add Event Form */}
+                        {/* Add/Edit Event Form */}
                         <div className="order-1 lg:order-2">
-                            <h2 className="text-xl font-semibold mb-6">Add New Event</h2>
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-semibold">{editingEvent ? 'Edit Event' : 'Add New Event'}</h2>
+                                {editingEvent && <button onClick={() => { setEditingEvent(null); setNewEvent({ title: '', type: 'college', date: '', description: '', location: '', image: '', link: '' }); }} className="text-xs text-zinc-500 hover:text-white transition-colors cursor-pointer">✕ Cancel</button>}
+                            </div>
                             <form onSubmit={handleAddEvent} className="bg-zinc-950/40 border border-zinc-900 rounded-xl p-5 md:p-6 space-y-5">
                                 <div>
                                     <label className="block text-zinc-400 text-xs font-medium mb-1.5">Event Title *</label>
@@ -2141,13 +2166,22 @@ export default function AdminDashboard() {
                                                     ))}
                                                 </div>
                                             </div>
-                                            <button
-                                                onClick={() => handleDeleteWorkflow(wf._id)}
-                                                className="shrink-0 w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all cursor-pointer"
-                                                title="Delete workflow"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                            </button>
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    onClick={() => { setEditingWorkflow(wf); setNewWorkflow({ title: wf.title, description: wf.description, category: wf.category, tags: Array.isArray(wf.tags) ? wf.tags.join(', ') : (wf.tags || ''), thumbnail: wf.thumbnail || '', workflowJson: '' }); }}
+                                                    className="shrink-0 w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all cursor-pointer"
+                                                    title="Edit workflow"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteWorkflow(wf._id)}
+                                                    className="shrink-0 w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all cursor-pointer"
+                                                    title="Delete workflow"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -2365,13 +2399,22 @@ export default function AdminDashboard() {
                                                 <p className="text-xs text-yellow-400/90 font-medium mt-0.5">{exp.company} • <span className="text-zinc-500">{exp.duration}</span></p>
                                                 <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{exp.description}</p>
                                             </div>
-                                            <button
-                                                onClick={() => handleDeleteExperience(exp._id)}
-                                                className="shrink-0 w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all cursor-pointer"
-                                                title="Delete experience entry"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                            </button>
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    onClick={() => { setEditingExperience(exp); setNewExperience({ company: exp.company, role: exp.role, duration: exp.duration, isCurrent: exp.isCurrent || false, location: exp.location || '', description: exp.description, skills: Array.isArray(exp.skills) ? exp.skills.join(', ') : (exp.skills || ''), link: exp.link || '', proof: exp.proof || '' }); }}
+                                                    className="shrink-0 w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all cursor-pointer"
+                                                    title="Edit experience"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteExperience(exp._id)}
+                                                    className="shrink-0 w-7 h-7 flex items-center justify-center text-zinc-700 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all cursor-pointer"
+                                                    title="Delete experience entry"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
