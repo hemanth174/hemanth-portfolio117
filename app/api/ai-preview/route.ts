@@ -23,7 +23,7 @@ type GeminiResponse = {
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+const DEFAULT_MODEL = 'gemini-3.5-flash';
 
 const asText = (value: unknown, maxLength: number): string => {
   if (typeof value !== 'string') {
@@ -43,7 +43,7 @@ const getContextFromSearch = (url: string): ProjectContext => {
 
   return {
     title: asText(params.get('title'), 140) || 'this project',
-    description: asText(params.get('description'), 700),
+    description: asText(params.get('description'), 3000),
     liveUrl: asText(params.get('liveUrl'), 260),
     codeUrl: asText(params.get('codeUrl'), 260),
   };
@@ -51,26 +51,40 @@ const getContextFromSearch = (url: string): ProjectContext => {
 
 const getContextFromBody = (body: Record<string, unknown>): ProjectContext => ({
   title: asText(body.title, 140) || 'this project',
-  description: asText(body.description, 700),
+  description: asText(body.description, 3000),
   liveUrl: asText(body.liveUrl, 260),
   codeUrl: asText(body.codeUrl, 260),
 });
 
-const createSystemPrompt = (context: ProjectContext) => `You are the AI assistant embedded beside a portfolio project preview.
+const createSystemPrompt = (context: ProjectContext) => `You are the AI assistant for a single portfolio project preview.
 
-Strict rules:
+Rules:
 - Answer only questions about the active project in PROJECT_CONTEXT.
-- If the user asks about anything else, reply exactly: "I can only answer questions about this project."
+- Stay precise, factual, and consistent. Prefer one clear answer over multiple variations.
+- If the same question is asked again, give the same direct answer.
+- If the user asks about anything outside this project, reply exactly: "I can only answer questions about this project."
 - Do not answer general coding, unrelated portfolio, personal, school, news, or other project questions.
 - Do not invent features, tech stack, metrics, credentials, deployment details, or private information.
 - If PROJECT_CONTEXT does not contain enough detail, say what is known from the context and what is not specified.
-- Keep answers brief, friendly, and helpful. Use plain text or basic Markdown (bold, lists).
+- Keep answers short, clear, and plain. Do not use markdown, bullets, numbering, bold, italics, or leading asterisks.
+- Do not add preambles, disclaimers, or filler text.
 
 PROJECT_CONTEXT:
 Title: ${context.title}
 Description: ${context.description || 'Not specified'}
 Live URL: ${context.liveUrl || 'Not specified'}
 Code URL: ${context.codeUrl || 'Not specified'}`;
+
+const normalizeAssistantText = (text: string) => {
+  return text
+    .replace(/\r\n/g, '\n')
+    .replace(/^\s*[*-]\s+/gm, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/^\s*#+\s+/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
 
 const renderAssistantHtml = (context: ProjectContext, keyConfigured: boolean) => {
   const bootData = JSON.stringify({ context, keyConfigured })
@@ -103,7 +117,16 @@ const renderAssistantHtml = (context: ProjectContext, keyConfigured: boolean) =>
   </script>
   <style type="text/css">
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes float3d { 0%, 100% { transform: translateY(0) rotateX(18deg) rotateY(-18deg) rotateZ(0deg); } 50% { transform: translateY(-7px) rotateX(18deg) rotateY(-18deg) rotateZ(2deg); } }
+    @keyframes ringSpin { from { transform: rotateZ(0deg); } to { transform: rotateZ(360deg); } }
+    @keyframes barPulse { 0%, 100% { transform: scaleY(0.55); opacity: 0.5; } 50% { transform: scaleY(1); opacity: 1; } }
+    @keyframes orbGlow { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); } }
     .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+    .think-shell { perspective: 900px; transform-style: preserve-3d; }
+    .think-ring { animation: ringSpin 8s linear infinite; transform-style: preserve-3d; }
+    .think-float { animation: float3d 1.8s ease-in-out infinite; transform-style: preserve-3d; }
+    .think-bar { animation: barPulse 1.05s ease-in-out infinite; transform-origin: center bottom; }
+    .think-orb { animation: orbGlow 1.6s ease-in-out infinite; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
@@ -114,10 +137,28 @@ const renderAssistantHtml = (context: ProjectContext, keyConfigured: boolean) =>
     </div>
 
     <div id="typing" class="hidden px-5 py-2">
-      <div class="flex items-center gap-1.5 px-4 py-3 bg-zinc-900/50 border border-white/5 rounded-2xl rounded-bl-none w-fit">
-        <div class="w-1 h-1 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-        <div class="w-1 h-1 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-        <div class="w-1 h-1 bg-zinc-500 rounded-full animate-bounce"></div>
+      <div class="think-shell flex w-fit items-center gap-4 rounded-2xl rounded-bl-none border border-white/10 bg-zinc-900/70 px-4 py-3 shadow-[0_16px_45px_rgba(0,0,0,0.35)]">
+        <div class="relative flex h-12 w-12 items-center justify-center">
+          <div class="think-ring absolute inset-0 rounded-full border border-yellow-400/20 border-t-yellow-400/80"></div>
+          <div class="think-orb h-5 w-5 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-[0_0_18px_rgba(250,204,21,0.55)]"></div>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold uppercase tracking-[0.35em] text-yellow-400">Thinking</span>
+            <span class="text-[10px] text-zinc-500">building a clear reply</span>
+          </div>
+          <div class="mt-2 flex items-end gap-1.5">
+            <div class="think-bar h-4 w-1.5 rounded-full bg-yellow-400/80 [animation-delay:-0.2s]"></div>
+            <div class="think-bar h-6 w-1.5 rounded-full bg-yellow-300/90 [animation-delay:-0.1s]"></div>
+            <div class="think-bar h-3 w-1.5 rounded-full bg-yellow-400/70"></div>
+            <div class="think-bar h-5 w-1.5 rounded-full bg-yellow-300/80 [animation-delay:-0.15s]"></div>
+          </div>
+        </div>
+        <div class="think-float flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-zinc-800/80 text-yellow-300 shadow-[0_12px_30px_rgba(0,0,0,0.25)]">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M13 2L4 14h7l-1 8 10-12h-7l0-8z"></path>
+          </svg>
+        </div>
       </div>
     </div>
 
@@ -163,21 +204,18 @@ const renderAssistantHtml = (context: ProjectContext, keyConfigured: boolean) =>
       return div.innerHTML;
     }
 
-    function parseMarkdown(text) {
+    function formatText(text) {
       const escaped = escapeHtml(text);
       return escaped
-        .replace(new RegExp('\\\\*\\\\*(.*?)\\\\*\\\\*', 'g'), '<strong class="text-white">$1</strong>')
-        .replace(new RegExp('\`([^\`]+)\`', 'g'), '<code class="bg-white/10 px-1.5 py-0.5 rounded font-mono text-xs text-yellow-200">$1</code>')
         .replace(/\\n\\n/g, '<div class="h-2"></div>')
-        .replace(/\\n/g, '<br/>')
-        .replace(/^- (.*)/gm, '<div class="flex gap-2 ml-2"><span class="text-yellow-400">•</span><span>$1</span></div>');
+        .replace(/\\n/g, '<br/>');
     }
 
     function addMessage(role, text) {
       const wrapper = document.createElement('div');
       wrapper.className = 'animate-in flex ' + (role === 'user' ? 'justify-end' : 'justify-start');
       
-      const content = role === 'assistant' ? parseMarkdown(text) : escapeHtml(text);
+      const content = role === 'assistant' ? formatText(text) : escapeHtml(text);
       const theme = role === 'user' 
         ? 'bg-yellow-400 text-black font-semibold rounded-br-none' 
         : 'bg-zinc-900 text-zinc-200 border border-white/5 rounded-bl-none';
@@ -198,11 +236,11 @@ const renderAssistantHtml = (context: ProjectContext, keyConfigured: boolean) =>
     });
 
     if (!boot.keyConfigured) {
-      addMessage('assistant', '⚠️ **Gemini API key is missing.** Please add your key to .env.local and restart the server.');
+      addMessage('assistant', 'Gemini API key is missing. Please add your key to .env.local and restart the server.');
     } else {
       // Escape the title in the initial message
       const title = boot.context.title;
-      addMessage('assistant', 'Hi! I can help with details about **' + title + '**. What would you like to know?');
+      addMessage('assistant', 'Hi! I can help with details about ' + title + '. What would you like to know?');
     }
 
     async function handleSend() {
@@ -216,7 +254,7 @@ const renderAssistantHtml = (context: ProjectContext, keyConfigured: boolean) =>
 
       if (!boot.keyConfigured) {
         setTimeout(() => {
-          addMessage('assistant', 'I cannot process your request without a **GEMINI_API_KEY**. Please configure it in your environment.');
+          addMessage('assistant', 'I cannot process your request without a GEMINI_API_KEY. Please configure it in your environment.');
         }, 300);
         return;
       }
@@ -315,8 +353,8 @@ export async function POST(request: NextRequest) {
           },
         ],
         generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 360,
+          temperature: 0.1,
+          maxOutputTokens: 1000,
         },
       }),
     });
@@ -337,7 +375,7 @@ export async function POST(request: NextRequest) {
       .trim();
 
     return NextResponse.json({
-      answer: answer || 'I can only answer questions about this project.',
+      answer: normalizeAssistantText(answer || 'I can only answer questions about this project.'),
     });
   } catch (err) {
     return NextResponse.json(
