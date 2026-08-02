@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ExternalLink, Download, Workflow, FolderOpen, ChevronDown } from 'lucide-react';
+import { ExternalLink, Radio, Workflow, FolderOpen } from 'lucide-react';
 import { transition } from '../Skills/page';
 
 import projectImg1 from '@/app/Logo_main.png';
@@ -105,24 +105,7 @@ const N8nLogo = ({ size = 28 }: { size?: number }) => (
 // ─── N8n Workflow Card ────────────────────────────────────────────────────────
 
 const N8nCard = ({ workflow }: { workflow: N8nWorkflow }) => {
-    const [downloading, setDownloading] = useState(false);
     const colors = N8N_CATEGORY_COLORS[workflow.category] ?? N8N_CATEGORY_COLORS['Custom'];
-
-    const handleDownload = async () => {
-        if (!workflow.workflowJson || downloading) return;
-        setDownloading(true);
-        try {
-            const blob = new Blob([workflow.workflowJson], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${workflow.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-        } finally {
-            setTimeout(() => setDownloading(false), 800);
-        }
-    };
 
     return (
         <div className="relative group flex flex-col bg-white dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-900 hover:border-[#EA4B35]/60 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_12px_24px_rgba(234,75,53,0.08)] dark:hover:shadow-[0_12px_24px_rgba(234,75,53,0.15)] hover:-translate-y-1">
@@ -180,20 +163,17 @@ const N8nCard = ({ workflow }: { workflow: N8nWorkflow }) => {
                             {workflow.nodeCount} nodes
                         </div>
                     )}
-                    <button
-                        onClick={handleDownload}
-                        disabled={!workflow.workflowJson || downloading}
-                        className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-black tracking-widest uppercase font-mono transition-all cursor-pointer border ${
+                    <a
+                        href={`/workflows/${workflow._id}`}
+                        className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-black tracking-widest uppercase font-mono transition-all border ${
                             !workflow.workflowJson
-                                ? 'border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-700 cursor-not-allowed'
-                                : downloading
-                                ? 'bg-[#EA4B35] border-[#EA4B35] text-white scale-95'
+                                ? 'pointer-events-none border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-700'
                                 : 'border-[#EA4B35]/40 text-[#EA4B35] hover:bg-[#EA4B35] hover:text-white hover:border-[#EA4B35]'
                         }`}
                     >
-                        <Download size={10} />
-                        {downloading ? 'Saving…' : 'Download'}
-                    </button>
+                        <Radio size={10} />
+                        Live now
+                    </a>
                 </div>
             </div>
         </div>
