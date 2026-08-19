@@ -16,7 +16,7 @@
 # next.js
 /.next/
 /out/
-
+client_secret_*.json
 # production
 /build
 

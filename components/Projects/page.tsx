@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ExternalLink, Radio, Workflow, FolderOpen } from 'lucide-react';
 import { transition } from '../Skills/page';
+import { trackProjectClick, trackWorkflowAction } from '@/lib/tracker';
 
 import projectImg1 from '@/app/Logo_main.png';
 import projectImg2 from '@/app/Img2.png';
@@ -165,6 +166,7 @@ const N8nCard = ({ workflow }: { workflow: N8nWorkflow }) => {
                     )}
                     <a
                         href={`/workflows/${workflow._id}`}
+                        onClick={() => trackWorkflowAction(workflow.title, 'live_click')}
                         className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-black tracking-widest uppercase font-mono transition-all border ${
                             !workflow.workflowJson
                                 ? 'pointer-events-none border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-700'
@@ -300,6 +302,7 @@ const ProjectCard = ({ project, noHover }: { project: Project; noHover?: boolean
             <div className="flex gap-4 p-6 pt-0 justify-center mt-auto">
                 {hasCode ? (
                     <a href={project.codeUrl} target="_blank" rel="noopener noreferrer"
+                        onClick={() => trackProjectClick(project.title, 'code_repo', project.projectType)}
                         className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-yellow-400 dark:hover:bg-yellow-300 text-zinc-700 dark:text-white hover:text-black dark:hover:text-black border border-zinc-200 dark:border-zinc-800 font-roboto text-[10px] sm:text-xs md:text-sm transition-colors duration-300 w-full justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.02c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A4.8 4.8 0 0 0 8 18v4" />
@@ -317,12 +320,14 @@ const ProjectCard = ({ project, noHover }: { project: Project; noHover?: boolean
                         href={requiresDirectOpen(project.liveUrl) ? project.liveUrl : getPreviewHref(project)}
                         target={requiresDirectOpen(project.liveUrl) ? '_blank' : undefined}
                         rel="noopener noreferrer"
+                        onClick={() => trackProjectClick(project.title, isColab ? 'colab_notebook' : 'live_demo', project.projectType)}
                         className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-yellow-400 dark:hover:bg-yellow-300 text-zinc-700 dark:text-white hover:text-black dark:hover:text-black border border-zinc-200 dark:border-zinc-800 font-roboto text-[10px] sm:text-xs md:text-sm transition-colors duration-300 w-full justify-center"
                     >
                         <ExternalLink size={16} /> LIVE DEMO
                     </a>
                 ) : hasCode ? (
                     <a href={`/testing?codeUrl=${encodeURIComponent(project.codeUrl!)}`}
+                        onClick={() => trackProjectClick(project.title, 'live_demo', project.projectType)}
                         className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-yellow-400 dark:hover:bg-yellow-300 text-zinc-700 dark:text-white hover:text-black dark:hover:text-black border border-zinc-200 dark:border-zinc-800 font-roboto text-[10px] sm:text-xs md:text-sm transition-colors duration-300 w-full justify-center">
                         <ExternalLink size={16} /> LIVE DEMO
                     </a>

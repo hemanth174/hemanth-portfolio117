@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { revalidatePath } from 'next/cache';
+import { verifyAdminRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -95,8 +96,7 @@ export async function GET() {
 
 // POST - Add a new certificate (Admin only)
 export async function POST(request: NextRequest) {
-  const authKey = request.headers.get('x-admin-key');
-  if (!authKey || authKey !== process.env.ADMIN_SECRET) {
+  if (!verifyAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -141,8 +141,7 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Delete a certificate (Admin only)
 export async function DELETE(request: NextRequest) {
-  const authKey = request.headers.get('x-admin-key');
-  if (!authKey || authKey !== process.env.ADMIN_SECRET) {
+  if (!verifyAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -181,8 +180,7 @@ export async function DELETE(request: NextRequest) {
 
 // PUT - Update a certificate (Admin only)
 export async function PUT(request: NextRequest) {
-  const authKey = request.headers.get('x-admin-key');
-  if (!authKey || authKey !== process.env.ADMIN_SECRET) {
+  if (!verifyAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

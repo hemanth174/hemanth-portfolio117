@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { revalidatePath } from 'next/cache';
+import { verifyAdminRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -25,8 +26,19 @@ function stripCredentials(obj: unknown): unknown {
   if (obj === null || obj === undefined) return obj;
   if (Array.isArray(obj)) return obj.map(stripCredentials);
   if (typeof obj === 'object') {
+    const record = obj as Record<string, unknown>;
+
+    // n8n stores secrets in { name: 'api_key', value: 'SECRET' } parameter pairs.
+    // Redact the value whenever a sibling "name"/"parameterName" is sensitive.
+    const paramName =
+      typeof record.name === 'string' ? record.name :
+      typeof record.parameterName === 'string' ? record.parameterName : '';
+    if (paramName && CREDENTIAL_KEYS.has(paramName) && 'value' in record) {
+      return { ...record, value: '[REDACTED]' };
+    }
+
     const result: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    for (const [key, value] of Object.entries(record)) {
       if (CREDENTIAL_KEYS.has(key)) {
         // Replace with placeholder instead of removing so JSON structure is preserved
         result[key] = typeof value === 'object' ? {} : '[REDACTED]';
@@ -79,8 +91,7 @@ export async function GET() {
 
 // POST - Add a new workflow (Admin only)
 export async function POST(request: NextRequest) {
-  const authKey = request.headers.get('x-admin-key');
-  if (!authKey || authKey !== process.env.ADMIN_SECRET) {
+  if (!verifyAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -156,8 +167,7 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Delete a workflow (Admin only)
 export async function DELETE(request: NextRequest) {
-  const authKey = request.headers.get('x-admin-key');
-  if (!authKey || authKey !== process.env.ADMIN_SECRET) {
+  if (!verifyAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -194,8 +204,7 @@ export async function DELETE(request: NextRequest) {
 
 // PUT - Update an existing workflow (Admin only)
 export async function PUT(request: NextRequest) {
-  const authKey = request.headers.get('x-admin-key');
-  if (!authKey || authKey !== process.env.ADMIN_SECRET) {
+  if (!verifyAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

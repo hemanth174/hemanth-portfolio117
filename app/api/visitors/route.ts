@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
+import { verifyAdminRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -46,8 +47,7 @@ export async function POST(request: NextRequest) {
 
 // GET - Get visitor stats (for admin page)
 export async function GET(request: NextRequest) {
-  const authKey = request.headers.get('x-admin-key');
-  if (authKey !== process.env.ADMIN_SECRET) {
+  if (!verifyAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

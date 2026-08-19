@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { transition } from "../Skills/page"
+import { trackContactAction } from '@/lib/tracker'
 
 type FormStatus = 'idle' | 'sending' | 'success' | 'error';
 
@@ -40,6 +41,7 @@ export const Contact = () => {
             setName('');
             setEmail('');
             setMessage('');
+            trackContactAction('submitted', email.trim());
 
             // Reset success message after 5 seconds
             setTimeout(() => setStatus('idle'), 5000);

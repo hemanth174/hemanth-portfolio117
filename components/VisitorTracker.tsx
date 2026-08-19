@@ -1,30 +1,49 @@
-'use client'
-import { useEffect } from 'react'
+'use client';
+import { useEffect } from 'react';
+import { trackEvent } from '@/lib/tracker';
 
 export const VisitorTracker = () => {
-    useEffect(() => {
-        // Only track once per session
-        const tracked = sessionStorage.getItem('portfolio_visited');
-        if (tracked) return;
+  useEffect(() => {
+    // 1. Track page view once per route/session
+    const sessionKey = 'portfolio_page_' + window.location.pathname;
+    if (!sessionStorage.getItem(sessionKey)) {
+      trackEvent({
+        category: 'page_view',
+        action: 'view_page',
+        label: window.location.pathname,
+        metadata: {
+          title: document.title,
+          url: window.location.href,
+        },
+      });
+      sessionStorage.setItem(sessionKey, 'true');
+    }
 
-        const trackVisit = async () => {
-            try {
-                await fetch('/api/visitors', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        page: window.location.pathname,
-                        referrer: document.referrer || '',
-                    }),
-                });
-                sessionStorage.setItem('portfolio_visited', 'true');
-            } catch {
-                // Silently fail - visitor tracking should not affect user experience
-            }
-        };
+    // 2. Global listener for external link clicks, theme toggles, etc.
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement)?.closest('a, button');
+      if (!target) return;
 
-        trackVisit();
-    }, []);
+      const href = target.getAttribute('href');
+      const text = target.textContent?.trim() || '';
 
-    return null; // This component renders nothing
+      if (href && (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:'))) {
+        // External link or social click
+        if (href.includes('github.com')) {
+          trackEvent({ category: 'social', action: 'github_click', label: href, metadata: { text } });
+        } else if (href.includes('linkedin.com')) {
+          trackEvent({ category: 'social', action: 'linkedin_click', label: href, metadata: { text } });
+        } else if (href.startsWith('mailto:')) {
+          trackEvent({ category: 'social', action: 'email_click', label: href, metadata: { text } });
+        } else if (!href.includes(window.location.hostname)) {
+          trackEvent({ category: 'interaction', action: 'external_link_click', label: href, metadata: { text } });
+        }
+      }
+    };
+
+    window.addEventListener('click', handleGlobalClick, { capture: true });
+    return () => window.removeEventListener('click', handleGlobalClick, { capture: true });
+  }, []);
+
+  return null;
 };

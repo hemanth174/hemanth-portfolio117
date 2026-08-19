@@ -460,8 +460,13 @@ export const Events = () => {
                                         {/* Event Content Body */}
                                         <div className="p-5 flex-1 flex flex-col justify-between">
                                             <div>
-                                                <div className="text-[8px] tracking-[0.25em] font-bold text-amber-600 dark:text-[#FFDD00] mb-2 uppercase">
+                                                <div className="text-[8px] tracking-[0.25em] font-bold text-amber-600 dark:text-[#FFDD00] mb-2 uppercase flex items-center gap-2">
                                                     {event.type === 'college' ? 'COLLEGE WORKSHOP' : 'EXTERNAL CAMPAIGN'}
+                                                    {event.story && (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-600 dark:bg-[#FFDD00] text-white dark:text-[#0a0a0a] font-black tracking-widest">
+                                                            ★ STORY
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <h3 className="text-sm md:text-base font-black text-zinc-800 dark:text-white leading-snug tracking-normal mb-3 uppercase line-clamp-2">
                                                     {event.title}

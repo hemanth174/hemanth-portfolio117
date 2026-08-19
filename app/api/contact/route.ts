@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { verifyAdminRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -38,8 +39,7 @@ function isValidEmail(email: string): boolean {
 
 // GET - Fetch all contact submissions (for admin page)
 export async function GET(request: NextRequest) {
-  const authKey = request.headers.get('x-admin-key');
-  if (authKey !== process.env.ADMIN_SECRET) {
+  if (!verifyAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -128,8 +128,7 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Delete a contact message (Admin only)
 export async function DELETE(request: NextRequest) {
-  const authKey = request.headers.get('x-admin-key');
-  if (!authKey || authKey !== process.env.ADMIN_SECRET) {
+  if (!verifyAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
