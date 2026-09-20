@@ -86,6 +86,24 @@ export interface Contact {
   read: boolean;
 }
 
+export interface StoryStat {
+  value: string;
+  label: string;
+}
+
+export interface StoryPhase {
+  label: string;
+  title: string;
+  desc: string;
+  marker?: boolean;
+}
+
+export interface StoryDecision {
+  decision: string;
+  rejected: string;
+  reason: string;
+}
+
 export interface Project {
   _id?: string;
   id?: number;
@@ -98,6 +116,24 @@ export interface Project {
   liveUrl?: string;
   order?: number;
   createdAt?: string;
+  // ── Project story fields (power the READ THE STORY page) ──
+  tagline?: string;
+  videoUrl?: string;
+  stack?: string[];
+  problemHeading?: string;
+  problem?: string[];
+  constraints?: string[];
+  processHeading?: string;
+  processIntro?: string;
+  phases?: StoryPhase[];
+  decisions?: StoryDecision[];
+  outcomeHeading?: string;
+  outcomeBody?: string[];
+  role?: string;
+  rolePoints?: string[];
+  reflectionHeading?: string;
+  reflection?: string;
+  stats?: StoryStat[];
 }
 
 export interface Certification {

@@ -39,16 +39,24 @@ body::-webkit-scrollbar {
   display: none !important;
 }
 
-/* Admin control room theme. Kept scoped so the public portfolio remains unchanged. */
+/* ─────────────────────────────────────────────────────────────
+   Admin Control Room Theming (Light & Dark)
+───────────────────────────────────────────────────────────── */
 .admin-shell {
   --admin-bg: #09090b;
   --admin-panel: rgba(24, 24, 27, 0.72);
   --admin-panel-solid: #18181b;
+  --admin-card-bg: #121215;
+  --admin-input-bg: #09090b;
   --admin-border: rgba(63, 63, 70, 0.62);
+  --admin-border-subtle: rgba(63, 63, 70, 0.35);
   --admin-text: #fafafa;
+  --admin-text-subtle: #d4d4d8;
   --admin-muted: #a1a1aa;
   --admin-faint: #71717a;
+  --admin-placeholder: #52525b;
   --admin-accent: #facc15;
+  --admin-accent-hover: #eab308;
   background: var(--admin-bg);
   color: var(--admin-text);
   transition: background-color 240ms ease, color 240ms ease;
@@ -59,19 +67,25 @@ body::-webkit-scrollbar {
 }
 
 .admin-shell.admin-light {
-  --admin-bg: #f4f4f5;
-  --admin-panel: rgba(255, 255, 255, 0.82);
+  --admin-bg: #f4f4f6;
+  --admin-panel: rgba(255, 255, 255, 0.95);
   --admin-panel-solid: #ffffff;
+  --admin-card-bg: #ffffff;
+  --admin-input-bg: #ffffff;
   --admin-border: #e4e4e7;
-  --admin-text: #18181b;
+  --admin-border-subtle: #e5e7eb;
+  --admin-text: #09090b;
+  --admin-text-subtle: #27272a;
   --admin-muted: #52525b;
   --admin-faint: #71717a;
-  --admin-accent: #b7791f;
-  background-image: radial-gradient(circle at 78% -10%, rgba(245, 158, 11, 0.13), transparent 30rem);
+  --admin-placeholder: #a1a1aa;
+  --admin-accent: #d97706;
+  --admin-accent-hover: #b45309;
+  background-image: radial-gradient(circle at 78% -10%, rgba(245, 158, 11, 0.12), transparent 30rem);
 }
 
 .admin-header {
-  background: color-mix(in srgb, var(--admin-bg) 86%, transparent);
+  background: color-mix(in srgb, var(--admin-bg) 90%, transparent);
   border-bottom: 1px solid var(--admin-border);
 }
 
@@ -105,6 +119,7 @@ body::-webkit-scrollbar {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   transition: border-color 180ms ease, color 180ms ease, background 180ms ease, transform 180ms ease;
+  cursor: pointer;
 }
 
 .admin-theme-toggle:hover {
@@ -113,33 +128,82 @@ body::-webkit-scrollbar {
   transform: translateY(-1px);
 }
 
-.admin-theme-icon {
-  color: var(--admin-accent);
-  font-size: 1rem;
-  line-height: 1;
-  transform: rotate(180deg);
-  transition: transform 240ms ease;
+/* Specific Light Mode Form Input and Layout Fixes */
+.admin-light input,
+.admin-light textarea,
+.admin-light select {
+  background-color: var(--admin-input-bg) !important;
+  color: var(--admin-text) !important;
+  border-color: #d4d4d8 !important;
 }
 
-.admin-theme-icon.is-active {
-  transform: rotate(0deg);
+.admin-light input::placeholder,
+.admin-light textarea::placeholder {
+  color: var(--admin-placeholder) !important;
 }
 
-.admin-light .text-white { color: var(--admin-text); }
-.admin-light .text-zinc-300 { color: #3f3f46; }
-.admin-light .text-zinc-400 { color: #52525b; }
-.admin-light .text-zinc-500 { color: #71717a; }
-.admin-light .text-zinc-600 { color: #a1a1aa; }
-.admin-light .text-zinc-700 { color: #d4d4d8; }
-.admin-light .text-zinc-800 { color: #e4e4e7; }
-.admin-light .bg-black { background-color: var(--admin-bg); }
-.admin-light .bg-zinc-950 { background-color: #fafafa; }
-.admin-light .bg-zinc-900\/50, .admin-light .bg-zinc-900\/40 { background-color: var(--admin-panel); }
-.admin-light .bg-zinc-950\/40, .admin-light .bg-zinc-950\/30 { background-color: rgba(255, 255, 255, 0.7); }
-.admin-light .border-zinc-900, .admin-light .border-zinc-900\/50, .admin-light .border-zinc-800\/50, .admin-light .border-zinc-800\/30, .admin-light .border-zinc-800\/20 { border-color: var(--admin-border); }
-.admin-light .border-zinc-800 { border-color: #d4d4d8; }
-.admin-light .placeholder\:text-zinc-700::placeholder { color: #a1a1aa; }
-.admin-light .admin-logout:hover { color: var(--admin-text); }
+.admin-light input:focus,
+.admin-light textarea:focus,
+.admin-light select:focus {
+  border-color: #eab308 !important;
+  box-shadow: 0 0 0 1px #eab308 !important;
+}
+
+/* Light mode overrides for Tailwind utility classes inside admin */
+.admin-light .bg-zinc-950,
+.admin-light .bg-zinc-950\/40,
+.admin-light .bg-zinc-950\/60,
+.admin-light .bg-zinc-950\/80 {
+  background-color: #ffffff !important;
+}
+
+.admin-light .bg-zinc-900,
+.admin-light .bg-zinc-900\/50,
+.admin-light .bg-zinc-900\/40,
+.admin-light .bg-zinc-900\/30 {
+  background-color: #ffffff !important;
+}
+
+.admin-light .border-zinc-800,
+.admin-light .border-zinc-800\/50,
+.admin-light .border-zinc-800\/30,
+.admin-light .border-zinc-900,
+.admin-light .border-zinc-900\/50 {
+  border-color: #e4e4e7 !important;
+}
+
+.admin-light .text-white {
+  color: #09090b !important;
+}
+
+.admin-light .text-zinc-300 {
+  color: #27272a !important;
+}
+
+.admin-light .text-zinc-400 {
+  color: #52525b !important;
+}
+
+.admin-light .text-zinc-500 {
+  color: #71717a !important;
+}
+
+.admin-light .text-zinc-600 {
+  color: #a1a1aa !important;
+}
+
+.admin-light .hover\:text-white:hover {
+  color: #09090b !important;
+}
+
+.admin-light .admin-tab-inactive {
+  color: #52525b;
+}
+
+.admin-light .admin-tab-inactive:hover {
+  color: #09090b;
+  background-color: #f4f4f5;
+}
 
 @media (max-width: 640px) {
   .admin-tabs > button {

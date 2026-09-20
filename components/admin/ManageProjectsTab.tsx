@@ -26,10 +26,48 @@ export const ManageProjectsTab: React.FC<ManageProjectsTabProps> = ({
   const [image, setImage] = useState('');
   const [codeUrl, setCodeUrl] = useState('');
   const [liveUrl, setLiveUrl] = useState('');
+  // ── Project story fields (powers the READ THE STORY page) ──
+  const [tagline, setTagline] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [stack, setStack] = useState('');
+  const [problemHeading, setProblemHeading] = useState('');
+  const [problem, setProblem] = useState('');
+  const [constraints, setConstraints] = useState('');
+  const [processHeading, setProcessHeading] = useState('');
+  const [processIntro, setProcessIntro] = useState('');
+  const [phases, setPhases] = useState('');
+  const [decisions, setDecisions] = useState('');
+  const [outcomeHeading, setOutcomeHeading] = useState('');
+  const [outcomeBody, setOutcomeBody] = useState('');
+  const [role, setRole] = useState('');
+  const [rolePoints, setRolePoints] = useState('');
+  const [reflectionHeading, setReflectionHeading] = useState('');
+  const [reflection, setReflection] = useState('');
+  const [stats, setStats] = useState('');
   const [imageMode, setImageMode] = useState<'upload' | 'url'>('upload');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const resetStoryFields = () => {
+    setTagline('');
+    setVideoUrl('');
+    setStack('');
+    setProblemHeading('');
+    setProblem('');
+    setConstraints('');
+    setProcessHeading('');
+    setProcessIntro('');
+    setPhases('');
+    setDecisions('');
+    setOutcomeHeading('');
+    setOutcomeBody('');
+    setRole('');
+    setRolePoints('');
+    setReflectionHeading('');
+    setReflection('');
+    setStats('');
+  };
 
   const handleStartEdit = (p: Project) => {
     setEditingProject(p);
@@ -40,6 +78,31 @@ export const ManageProjectsTab: React.FC<ManageProjectsTabProps> = ({
     setImage(p.image || '');
     setCodeUrl(p.codeUrl || '');
     setLiveUrl(p.liveUrl || '');
+    setTagline(p.tagline || '');
+    setVideoUrl(p.videoUrl || '');
+    setStack(Array.isArray(p.stack) ? p.stack.join(', ') : (p.stack || ''));
+    setProblemHeading(p.problemHeading || '');
+    setProblem((p.problem || []).join('\n\n'));
+    setConstraints((p.constraints || []).join('\n'));
+    setProcessHeading(p.processHeading || '');
+    setProcessIntro(p.processIntro || '');
+    setPhases(
+      (p.phases || [])
+        .map((ph) => `${ph.label || ''} | ${ph.title || ''} | ${ph.desc || ''}${ph.marker ? ' | !' : ''}`)
+        .join('\n')
+    );
+    setDecisions(
+      (p.decisions || [])
+        .map((d) => `${d.decision || ''} | ${d.rejected || ''} | ${d.reason || ''}`)
+        .join('\n')
+    );
+    setOutcomeHeading(p.outcomeHeading || '');
+    setOutcomeBody((p.outcomeBody || []).join('\n\n'));
+    setRole(p.role || '');
+    setRolePoints((p.rolePoints || []).join('\n'));
+    setReflectionHeading(p.reflectionHeading || '');
+    setReflection(p.reflection || '');
+    setStats((p.stats || []).map((s) => `${s.value || ''} | ${s.label || ''}`).join('\n'));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -52,7 +115,11 @@ export const ManageProjectsTab: React.FC<ManageProjectsTabProps> = ({
     setImage('');
     setCodeUrl('');
     setLiveUrl('');
+    resetStoryFields();
   };
+
+  const storyHasContent = () =>
+    !!(tagline.trim() || videoUrl.trim() || problem.trim() || decisions.trim() || outcomeBody.trim());
 
   const handleFile = (file: File) => {
     if (!file.type.startsWith('image/')) return;
@@ -62,6 +129,9 @@ export const ManageProjectsTab: React.FC<ManageProjectsTabProps> = ({
     };
     reader.readAsDataURL(file);
   };
+
+  const splitLines = (v: string) => v.split('\n').map((s) => s.trim()).filter(Boolean);
+  const splitParas = (v: string) => v.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +149,37 @@ export const ManageProjectsTab: React.FC<ManageProjectsTabProps> = ({
           image,
           codeUrl: codeUrl.trim(),
           liveUrl: liveUrl.trim(),
+          // ── Story payload (arrays parsed from the textareas below) ──
+          tagline: tagline.trim(),
+          videoUrl: videoUrl.trim(),
+          stack: stack.split(',').map((s) => s.trim()).filter(Boolean),
+          problemHeading: problemHeading.trim(),
+          problem: splitParas(problem),
+          constraints: splitLines(constraints),
+          processHeading: processHeading.trim(),
+          processIntro: processIntro.trim(),
+          phases: splitLines(phases).map((line) => {
+            const [label = '', phaseTitle = '', desc = '', flag = ''] = line.split('|').map((s) => s.trim());
+            return { label, title: phaseTitle, desc, marker: flag === '!' };
+          }),
+          decisions: splitLines(decisions)
+            .map((line) => {
+              const [decision = '', rejected = '', reason = ''] = line.split('|').map((s) => s.trim());
+              return { decision, rejected, reason };
+            })
+            .filter((d) => d.decision),
+          outcomeHeading: outcomeHeading.trim(),
+          outcomeBody: splitParas(outcomeBody),
+          role: role.trim(),
+          rolePoints: splitLines(rolePoints),
+          reflectionHeading: reflectionHeading.trim(),
+          reflection: reflection.trim(),
+          stats: splitLines(stats)
+            .map((line) => {
+              const [value = '', label = ''] = line.split('|').map((s) => s.trim());
+              return { value, label };
+            })
+            .filter((s) => s.value || s.label),
         },
         !!editingProject
       );
@@ -297,6 +398,229 @@ export const ManageProjectsTab: React.FC<ManageProjectsTabProps> = ({
               </div>
             </div>
 
+            {/* ── Project Story (powers the READ THE STORY page) ── */}
+            <details className="rounded-xl border border-zinc-300 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 overflow-hidden">
+              <summary className="px-3.5 py-2.5 text-[11px] font-bold tracking-wider uppercase text-zinc-600 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-yellow-400 transition-colors cursor-pointer select-none flex items-center justify-between font-mono">
+                <span>
+                  📖 Project Story{' '}
+                  {storyHasContent() ? (
+                    <span className="text-amber-600 dark:text-yellow-400">(filled ✓)</span>
+                  ) : (
+                    <span className="text-zinc-400">(optional)</span>
+                  )}
+                </span>
+                <span className="text-zinc-400">▾</span>
+              </summary>
+              <div className="px-3.5 pb-3.5 pt-1 space-y-3 border-t border-zinc-200 dark:border-zinc-800">
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    One-line outcome (headline, read first)
+                  </label>
+                  <input
+                    type="text"
+                    value={tagline}
+                    onChange={(e) => setTagline(e.target.value)}
+                    placeholder="e.g. A live platform where nothing disappears into a register."
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Demo video URL (YouTube link or direct .mp4)
+                  </label>
+                  <input
+                    type="text"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    placeholder="https://youtube.com/watch?v=... or https://.../demo.mp4"
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Tech stack (comma separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={stack}
+                    onChange={(e) => setStack(e.target.value)}
+                    placeholder="React, Node.js, MongoDB, Vercel"
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Problem heading (make it carry the story)
+                  </label>
+                  <input
+                    type="text"
+                    value={problemHeading}
+                    onChange={(e) => setProblemHeading(e.target.value)}
+                    placeholder="e.g. Complaints went into a register — and never came back out."
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Problem (paragraphs — separate with a blank line)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={problem}
+                    onChange={(e) => setProblem(e.target.value)}
+                    placeholder="What was broken, who it hurt, why it stayed broken…"
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400 resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Constraints (one per line)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={constraints}
+                    onChange={(e) => setConstraints(e.target.value)}
+                    placeholder={'3-month deadline\nHas to run in a real space\nSmall team, limited budget'}
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400 resize-none"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                      Process heading
+                    </label>
+                    <input
+                      type="text"
+                      value={processHeading}
+                      onChange={(e) => setProcessHeading(e.target.value)}
+                      placeholder="How it was built."
+                      className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                      Process intro
+                    </label>
+                    <input
+                      type="text"
+                      value={processIntro}
+                      onChange={(e) => setProcessIntro(e.target.value)}
+                      placeholder="One-line intro (optional)"
+                      className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Timeline (label | title | what happened — trailing ! = milestone)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={phases}
+                    onChange={(e) => setPhases(e.target.value)}
+                    placeholder={'Month 1 | Idea and scope | Mapped out the build\nMonth 3 | Deadline | Kept going anyway | !'}
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400 resize-none font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Decision log (decision | what you rejected | why)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={decisions}
+                    onChange={(e) => setDecisions(e.target.value)}
+                    placeholder={'Rebuilt from scratch | Keep patching v1 | Every fix exposed the next weak joint'}
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400 resize-none font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Outcome heading
+                  </label>
+                  <input
+                    type="text"
+                    value={outcomeHeading}
+                    onChange={(e) => setOutcomeHeading(e.target.value)}
+                    placeholder="What shipped."
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Outcome (paragraphs — real numbers beat adjectives)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={outcomeBody}
+                    onChange={(e) => setOutcomeBody(e.target.value)}
+                    placeholder="What changed because this exists…"
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400 resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Your role (one line)
+                  </label>
+                  <input
+                    type="text"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    placeholder="Full-stack design and build."
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Role points (one per line)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={rolePoints}
+                    onChange={(e) => setRolePoints(e.target.value)}
+                    placeholder={'Designed the lifecycle\nBuilt the platform end to end'}
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400 resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Reflection heading
+                  </label>
+                  <input
+                    type="text"
+                    value={reflectionHeading}
+                    onChange={(e) => setReflectionHeading(e.target.value)}
+                    placeholder="What I'd do differently."
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Reflection (honest beats generic)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={reflection}
+                    onChange={(e) => setReflection(e.target.value)}
+                    placeholder="What you learned, what you'd change next time…"
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400 resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
+                    Stat strip (value | label, one per line)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={stats}
+                    onChange={(e) => setStats(e.target.value)}
+                    placeholder={'8 months | actually spent building\nLive | deployed on Vercel'}
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400 resize-none font-mono"
+                  />
+                </div>
+              </div>
+            </details>
+
             <button
               type="submit"
               disabled={isSubmitting}
@@ -338,6 +662,11 @@ export const ManageProjectsTab: React.FC<ManageProjectsTabProps> = ({
                       <span className="absolute top-2 right-2 text-[9px] font-black uppercase font-mono px-2 py-0.5 rounded-full bg-yellow-400 text-black">
                         {p.category}
                       </span>
+                      {(p.tagline || p.videoUrl || (p.problem || []).length || (p.decisions || []).length) && (
+                        <span className="absolute top-2 left-2 text-[8px] font-black uppercase font-mono px-2 py-0.5 rounded-full bg-black/70 text-yellow-300 border border-yellow-400/40">
+                          Story ✓{p.videoUrl ? ' · Video ✓' : ''}
+                        </span>
+                      )}
                     </div>
 
                     <h4 className="font-bold text-sm text-zinc-900 dark:text-white line-clamp-1 mb-1">
