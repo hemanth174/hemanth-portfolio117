@@ -10,21 +10,24 @@ export const About = () => {
                 <h1 className={`tracking-widest text-3xl md:text-4xl font-roboto text-amber-600 dark:text-yellow-300 font-bold ${transition}`}>ABOUT ME</h1>
             </div>
             <div className="font-mono flex flex-col xl:flex-row items-center justify-center gap-10 xl:gap-16 w-full">
-                <div className="flex items-end p-2 md:p-5 w-full xl:w-auto justify-center">
-                    <Image
-                        className="block h-64 md:h-100 object-cover rounded-l-sm border border-zinc-200 dark:border-zinc-900"
-                        src="https://res.cloudinary.com/dqtlqvhw5/image/upload/v1781927873/Hemnath_img_yshhlo.png"
-                        alt="hemanth-photo"
-                        width={400}
-                        height={400}
-                        priority
-                    />
+                <div className="flex items-stretch p-2 md:p-5 w-full xl:w-auto justify-center">
+                    <div className="w-full max-w-xs sm:max-w-sm md:max-w-md aspect-[4/5] overflow-hidden rounded-l-md border border-zinc-200 dark:border-zinc-900 bg-zinc-200 dark:bg-zinc-900">
+                        <Image
+                            className="block h-full w-full object-cover object-top"
+                            src="https://res.cloudinary.com/dqtlqvhw5/image/upload/v1781927873/Hemnath_img_yshhlo.png"
+                            alt="Portrait of Hemanth Atthuluri"
+                            width={800}
+                            height={1000}
+                            sizes="(max-width: 640px) 100vw, (max-width: 768px) 384px, 448px"
+                            priority
+                        />
+                    </div>
                     <a
                         href="/resume"
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Open resume"
-                        className="flex flex-col items-center justify-center gap-2 md:gap-3 bg-yellow-400 dark:bg-yellow-300 text-black py-2 px-1 md:py-3 md:px-2 rounded-r-sm shadow-lg cursor-pointer hover:bg-yellow-500 dark:hover:bg-yellow-400 transition-colors h-64 md:h-30 md:rounded-none"
+                        className="flex flex-col items-center justify-center gap-2 md:gap-3 bg-yellow-400 dark:bg-yellow-300 text-black py-2 px-1 md:py-3 md:px-2 rounded-r-md shadow-lg cursor-pointer hover:bg-yellow-500 dark:hover:bg-yellow-400 transition-colors self-stretch"
                     >
                         <span className="[writing-mode:vertical-lr] rotate-180 font-bold text-sm">RESUME</span>
                         <FileText className="rotate-270" size={20} />

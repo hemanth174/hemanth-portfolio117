@@ -25,7 +25,6 @@ export const transition = `relative w-fit after:content-[''] after:absolute afte
 type SkillItem = {
     id: string;
     name: string;
-    level: 'EXPERT' | 'PRO' | 'ADVANCED';
     desc: string;
     icon: React.ReactNode;
 };
@@ -49,9 +48,9 @@ const skillCategories: SkillCategory[] = [
         badgeColor: 'bg-yellow-400/10 text-amber-600 dark:text-yellow-300 border-yellow-400/30',
         icon: <LayoutGrid size={20} className="text-amber-600 dark:text-yellow-300" />,
         items: [
-            { id: 'fe-1', name: 'HTML, CSS, JS', level: 'EXPERT', desc: 'Semantic HTML5, Responsive CSS3 & ES6+ JavaScript', icon: <Globe size={18} className="text-amber-500" /> },
-            { id: 'fe-2', name: 'TAILWIND', level: 'PRO', desc: 'Utility-First CSS, Design Systems & Glassmorphism', icon: <Palette size={18} className="text-cyan-400" /> },
-            { id: 'fe-3', name: 'REACT', level: 'ADVANCED', desc: 'Component Architecture, Hooks & Next.js Ecosystem', icon: <Atom size={18} className="text-blue-400" /> },
+            { id: 'fe-1', name: 'HTML, CSS, JS', desc: 'Semantic HTML5, Responsive CSS3 & ES6+ JavaScript', icon: <Globe size={18} className="text-amber-500" /> },
+            { id: 'fe-2', name: 'TAILWIND', desc: 'Utility-First CSS, Design Systems & Glassmorphism', icon: <Palette size={18} className="text-cyan-400" /> },
+            { id: 'fe-3', name: 'REACT', desc: 'Component Architecture, Hooks & Next.js Ecosystem', icon: <Atom size={18} className="text-blue-400" /> },
         ],
     },
     {
@@ -62,9 +61,9 @@ const skillCategories: SkillCategory[] = [
         badgeColor: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
         icon: <HardDrive size={20} className="text-amber-600 dark:text-amber-400" />,
         items: [
-            { id: 'be-1', name: 'NODE JS', level: 'ADVANCED', desc: 'Asynchronous Event Loop, REST APIs & Express.js', icon: <Server size={18} className="text-emerald-400" /> },
-            { id: 'be-2', name: 'SQL', level: 'PRO', desc: 'Relational Database Schema & Relational Queries', icon: <TableProperties size={18} className="text-indigo-400" /> },
-            { id: 'be-3', name: 'MONGO DB', level: 'PRO', desc: 'NoSQL Document Store, Aggregation & Mongoose', icon: <Database size={18} className="text-teal-400" /> },
+            { id: 'be-1', name: 'NODE JS', desc: 'Asynchronous Event Loop, REST APIs & Express.js', icon: <Server size={18} className="text-emerald-400" /> },
+            { id: 'be-2', name: 'SQL', desc: 'Relational Database Schema & Relational Queries', icon: <TableProperties size={18} className="text-indigo-400" /> },
+            { id: 'be-3', name: 'MONGO DB', desc: 'NoSQL Document Store, Aggregation & Mongoose', icon: <Database size={18} className="text-teal-400" /> },
         ],
     },
     {
@@ -75,9 +74,9 @@ const skillCategories: SkillCategory[] = [
         badgeColor: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30',
         icon: <Cpu size={20} className="text-yellow-600 dark:text-yellow-400" />,
         items: [
-            { id: 'ai-1', name: 'GITHUB', level: 'EXPERT', desc: 'Version Control, Collaborative Workflows & CI/CD', icon: <GitBranch size={18} className="text-purple-400" /> },
-            { id: 'ai-2', name: 'GEN AI', level: 'ADVANCED', desc: 'Prompt Engineering, RAG Systems & Autonomous Agents', icon: <Wand2 size={18} className="text-amber-300" /> },
-            { id: 'ai-3', name: 'LLMs', level: 'PRO', desc: 'Hugging Face, OpenAI APIs & Intelligent Assistants', icon: <Bot size={18} className="text-yellow-400" /> },
+            { id: 'ai-1', name: 'GITHUB', desc: 'Version Control, Collaborative Workflows & CI/CD', icon: <GitBranch size={18} className="text-purple-400" /> },
+            { id: 'ai-2', name: 'GEN AI', desc: 'Prompt Engineering, RAG Systems & Autonomous Agents', icon: <Wand2 size={18} className="text-amber-300" /> },
+            { id: 'ai-3', name: 'LLMs', desc: 'Hugging Face, OpenAI APIs & Intelligent Assistants', icon: <Bot size={18} className="text-yellow-400" /> },
         ],
     },
 ];
@@ -197,7 +196,7 @@ export const Skills = () => {
 
                                                 {/* Skill Details */}
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                                    <div className="flex items-center gap-2 mb-1">
                                                         <div className="flex items-center gap-2.5">
                                                             <div className="p-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center shrink-0 shadow-sm">
                                                                 {skill.icon}
@@ -210,15 +209,6 @@ export const Skills = () => {
                                                                 {skill.name}
                                                             </h3>
                                                         </div>
-                                                        <span className={`text-[9px] font-black tracking-widest px-2 py-0.5 rounded border uppercase ${
-                                                            skill.level === 'EXPERT'
-                                                                ? 'bg-yellow-400/15 text-amber-600 dark:text-yellow-300 border-yellow-400/30'
-                                                                : skill.level === 'PRO'
-                                                                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
-                                                                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                                                        }`}>
-                                                            {skill.level}
-                                                        </span>
                                                     </div>
                                                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-sans leading-relaxed">
                                                         {skill.desc}

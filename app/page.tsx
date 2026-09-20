@@ -6,6 +6,7 @@ import { WorkExperience } from "@/components/WorkExperience/page";
 import { Experience } from "@/components/Experience/page";
 import { Events } from "@/components/Events/page";
 import { Contact } from "@/components/Contact/page";
+import { Footer } from "@/components/Footer/page";
 import { VisitorTracker } from "@/components/VisitorTracker";
 
 export default function Home() {
@@ -37,6 +38,7 @@ export default function Home() {
       <div id="section8" className="scroll-mt-20">
         <Contact />
       </div>
+      <Footer />
     </>
   );
 }

@@ -284,6 +284,8 @@ export const WorkExperience = () => {
                                     src={activeProof.file}
                                     alt={activeProof.title}
                                     className="mx-auto max-w-full max-h-[75vh] object-contain rounded-lg shadow-lg"
+                                    loading="lazy"
+                                    decoding="async"
                                 />
                             ) : getProofKind(activeProof.file) === 'pdf' ? (
                                 <iframe

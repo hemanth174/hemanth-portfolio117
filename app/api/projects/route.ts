@@ -12,6 +12,102 @@ function sanitize(value: unknown, maxLength: number): string {
   return value.replace(/[<>]/g, '').trim().slice(0, maxLength);
 }
 
+function cleanStr(value: unknown, maxLength: number): string {
+  return sanitize(value, maxLength);
+}
+
+/** One-per-line (or array) → string array for simple lists. */
+function toStringArray(value: unknown, maxItems: number, maxLength: number): string[] {
+  const list = Array.isArray(value) ? value : typeof value === 'string' ? value.split('\n') : [];
+  return list
+    .map((v) => cleanStr(v, maxLength))
+    .filter(Boolean)
+    .slice(0, maxItems);
+}
+
+/** Blank-line-separated paragraphs (or array) → string array. */
+function toParagraphs(value: unknown, maxItems: number, maxLength: number): string[] {
+  const list = Array.isArray(value) ? value : typeof value === 'string' ? value.split(/\n\s*\n/) : [];
+  return list
+    .map((v) => cleanStr(v, maxLength))
+    .filter(Boolean)
+    .slice(0, maxItems);
+}
+
+/** Comma-separated (or array) → stack array. */
+function toStack(value: unknown): string[] {
+  const list = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : [];
+  return list
+    .map((v) => cleanStr(v, 60))
+    .filter(Boolean)
+    .slice(0, 20);
+}
+
+function toStats(value: unknown): { value: string; label: string }[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .slice(0, 6)
+    .map((item) => {
+      const o = (item && typeof item === 'object' ? item : {}) as Record<string, unknown>;
+      return { value: cleanStr(o.value, 120), label: cleanStr(o.label, 120) };
+    })
+    .filter((s) => s.value || s.label);
+}
+
+function toPhases(value: unknown): { label: string; title: string; desc: string; marker?: boolean }[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .slice(0, 12)
+    .map((item) => {
+      const o = (item && typeof item === 'object' ? item : {}) as Record<string, unknown>;
+      return {
+        label: cleanStr(o.label, 80),
+        title: cleanStr(o.title, 150),
+        desc: cleanStr(o.desc, 500),
+        marker: o.marker === true || o.marker === 'true',
+      };
+    })
+    .filter((p) => p.label || p.title || p.desc);
+}
+
+function toDecisions(value: unknown): { decision: string; rejected: string; reason: string }[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .slice(0, 8)
+    .map((item) => {
+      const o = (item && typeof item === 'object' ? item : {}) as Record<string, unknown>;
+      return {
+        decision: cleanStr(o.decision, 500),
+        rejected: cleanStr(o.rejected, 500),
+        reason: cleanStr(o.reason, 500),
+      };
+    })
+    .filter((d) => d.decision);
+}
+
+/** Parse + sanitize every story field from a POST/PUT body. */
+function parseStoryFields(body: Record<string, unknown>) {
+  return {
+    tagline: sanitize(body.tagline, 200),
+    videoUrl: sanitize(body.videoUrl, 1000),
+    stack: toStack(body.stack),
+    problemHeading: sanitize(body.problemHeading, 200),
+    problem: toParagraphs(body.problem, 12, 2000),
+    constraints: toStringArray(body.constraints, 20, 500),
+    processHeading: sanitize(body.processHeading, 200),
+    processIntro: sanitize(body.processIntro, 1000),
+    phases: toPhases(body.phases),
+    decisions: toDecisions(body.decisions),
+    outcomeHeading: sanitize(body.outcomeHeading, 200),
+    outcomeBody: toParagraphs(body.outcomeBody, 12, 2000),
+    role: sanitize(body.role, 200),
+    rolePoints: toStringArray(body.rolePoints, 20, 500),
+    reflectionHeading: sanitize(body.reflectionHeading, 200),
+    reflection: sanitize(body.reflection, 2000),
+    stats: toStats(body.stats),
+  };
+}
+
 // GET - Fetch all projects. If database is missing any default projects, insert them.
 export async function GET() {
   try {
@@ -155,9 +251,11 @@ export async function POST(request: NextRequest) {
     const projectType = rawProjectType === 'small' ? 'small' : 'big';
     const description = sanitize(body.description, 2000);
     // Base64 images can be large (up to 5MB), we sanitize but allow a higher limit.
-    const image = sanitize(body.image, 10 * 1024 * 1024); 
+    const image = sanitize(body.image, 10 * 1024 * 1024);
     const codeUrl = sanitize(body.codeUrl, 500);
     const liveUrl = sanitize(body.liveUrl, 500);
+    // Optional story fields (headline, video, narrative sections).
+    const story = parseStoryFields(body);
 
     if (!title || title.length < 2) {
       return NextResponse.json({ error: 'Title must be at least 2 characters.' }, { status: 400 });
@@ -178,6 +276,7 @@ export async function POST(request: NextRequest) {
       image,
       codeUrl,
       liveUrl,
+      ...story,
       createdAt: new Date(),
     };
 
@@ -258,9 +357,10 @@ export async function PUT(request: NextRequest) {
     const projectType = rawProjectType === 'small' ? 'small' : 'big';
     const description = sanitize(body.description, 2000);
     // Base64 images can be large (up to 5MB), we sanitize but allow a higher limit.
-    const image = sanitize(body.image, 10 * 1024 * 1024); 
+    const image = sanitize(body.image, 10 * 1024 * 1024);
     const codeUrl = sanitize(body.codeUrl, 500);
     const liveUrl = sanitize(body.liveUrl, 500);
+    const story = parseStoryFields(body);
     const order = typeof body.order === 'number' ? body.order : undefined;
 
     if (!title || title.length < 2) {
@@ -289,6 +389,7 @@ export async function PUT(request: NextRequest) {
       image,
       codeUrl,
       liveUrl,
+      ...story,
     };
 
     if (order !== undefined) {

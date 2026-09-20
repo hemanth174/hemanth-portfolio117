@@ -1,7 +1,9 @@
 'use client'
 import { useState } from 'react'
+import { FaInstagram, FaWhatsapp } from 'react-icons/fa'
 import { transition } from "../Skills/page"
 import { trackContactAction } from '@/lib/tracker'
+import { SOCIAL_LINKS } from "../Footer/page"
 
 type FormStatus = 'idle' | 'sending' | 'success' | 'error';
 
@@ -89,6 +91,24 @@ export const Contact = () => {
                                 className="hover:bg-yellow-400 dark:hover:bg-yellow-300 px-8 py-3 text-zinc-800 dark:text-white hover:text-black dark:hover:text-black border-2 border-yellow-500 dark:border-yellow-400 transition-all tracking-[0.2em] font-bold text-sm hover:rounded-lg"
                             >
                                 EMAIL
+                            </a>
+                            <a
+                                href={SOCIAL_LINKS.whatsapp}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 hover:bg-yellow-400 dark:hover:bg-yellow-300 px-8 py-3 text-zinc-800 dark:text-white hover:text-black dark:hover:text-black border-2 border-yellow-500 dark:border-yellow-400 transition-all tracking-[0.2em] font-bold text-sm hover:rounded-lg"
+                            >
+                                <FaWhatsapp size={16} aria-hidden="true" />
+                                WHATSAPP
+                            </a>
+                            <a
+                                href={SOCIAL_LINKS.instagram}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 hover:bg-yellow-400 dark:hover:bg-yellow-300 px-8 py-3 text-zinc-800 dark:text-white hover:text-black dark:hover:text-black border-2 border-yellow-500 dark:border-yellow-400 transition-all tracking-[0.2em] font-bold text-sm hover:rounded-lg"
+                            >
+                                <FaInstagram size={16} aria-hidden="true" />
+                                INSTAGRAM
                             </a>
                         </div>
                     </div>

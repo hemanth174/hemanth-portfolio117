@@ -78,6 +78,8 @@ const EventDrawer = ({
                                 src={event.image}
                                 alt={event.title}
                                 className="w-full h-full object-cover"
+                                loading="lazy"
+                                decoding="async"
                             />
                         ) : (
                             <div className={`w-[75%] max-w-[320px] h-[110px] rounded border flex flex-col items-center justify-center p-4 select-none ${theme.bg} ${theme.border} ${theme.text}`}>
@@ -435,6 +437,7 @@ export const Events = () => {
                                                     alt={event.title}
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                     loading="lazy"
+                                                    decoding="async"
                                                 />
                                             ) : (
                                                 renderMockBadge(event, index)

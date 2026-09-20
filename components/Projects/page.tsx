@@ -116,7 +116,7 @@ const N8nCard = ({ workflow }: { workflow: N8nWorkflow }) => {
             {/* Thumbnail or placeholder */}
             <div className="relative w-full h-[110px] bg-zinc-50 dark:bg-black/40 flex items-center justify-center overflow-hidden shrink-0">
                 {workflow.thumbnail ? (
-                    <img src={workflow.thumbnail} alt={workflow.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={workflow.thumbnail} alt={workflow.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
                 ) : (
                     <div className="flex flex-col items-center justify-center gap-2 w-full h-full bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900 border border-zinc-100 dark:border-zinc-800/40 rounded-xl">
                         <div className="absolute inset-0 opacity-[0.06] dark:opacity-[0.04] bg-[radial-gradient(#EA4B35_1px,transparent_1px)] [background-size:16px_16px]" />
@@ -253,8 +253,10 @@ const ProjectCard = ({ project, noHover }: { project: Project; noHover?: boolean
     const hasCode = !!project.codeUrl?.trim() && project.codeUrl.trim() !== '#';
     const hasLive = isValidLiveUrl(project.liveUrl);
 
+    const storyHref = `/projects/${project._id ?? project.id ?? ''}`;
+
     return (
-        <div className={` group h-[350px] rounded-2xl transition-all duration-300`}>
+        <div className={` group h-[430px] rounded-2xl transition-all duration-300`}>
             {/* Inner card: overflow-hidden safe here since wrapper has no overflow clip */}
             <div className="flex flex-col h-full bg-white dark:bg-zinc-950/40 border-t-[3px] border-t-yellow-400 dark:border-t-yellow-300 rounded-[14px] overflow-hidden shadow-lg transition-all duration-300">
             <div className="relative w-full h-40 flex items-center justify-center overflow-hidden bg-zinc-100 dark:bg-black/40">
@@ -270,6 +272,8 @@ const ProjectCard = ({ project, noHover }: { project: Project; noHover?: boolean
                         className={`p-1 rounded-xl object-contain w-full h-full transition-transform duration-500 ${noHover ? '' : 'group-hover:scale-105'}`}
                         src={project.image}
                         alt={project.title}
+                        loading="lazy"
+                        decoding="async"
                     />
                 ) : isColab ? (
                     <div className="w-full h-full bg-gradient-to-br from-zinc-100 via-zinc-50 to-zinc-200 dark:from-zinc-950 dark:via-zinc-900 dark:to-black flex flex-col items-center justify-center relative p-4">
@@ -294,12 +298,21 @@ const ProjectCard = ({ project, noHover }: { project: Project; noHover?: boolean
                 <h1 className={`text-xl font-bold text-zinc-900 dark:text-white transition-colors mb-3 line-clamp-1 ${noHover ? '' : 'group-hover:text-amber-600 dark:group-hover:text-yellow-300'}`} title={project.title}>
                     {project.title}
                 </h1>
-                <p className="text-sm text-zinc-600 dark:text-gray-400 font-mono line-clamp-3" title={project.description}>
+                <p className="text-sm text-zinc-600 dark:text-gray-400 font-mono line-clamp-2" title={project.description}>
                     {project.description}
                 </p>
             </div>
 
-            <div className="flex gap-4 p-6 pt-0 justify-center mt-auto">
+            <div className="flex flex-col gap-3 p-6 pt-0 justify-center mt-auto">
+                {/* Read the project story — the primary action */}
+                <a href={storyHref}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-400 dark:bg-yellow-300 hover:bg-yellow-500 dark:hover:bg-yellow-400 text-black font-roboto font-bold text-[10px] sm:text-xs md:text-sm tracking-[0.15em] transition-colors duration-300 shadow-sm">
+                    READ THE STORY
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </a>
+                <div className="flex gap-4 justify-center">
                 {hasCode ? (
                     <a href={project.codeUrl} target="_blank" rel="noopener noreferrer"
                         onClick={() => trackProjectClick(project.title, 'code_repo', project.projectType)}
@@ -336,6 +349,7 @@ const ProjectCard = ({ project, noHover }: { project: Project; noHover?: boolean
                         <ExternalLink size={16} /> NO DEMO
                     </button>
                 )}
+                </div>
             </div>
             </div>
         </div>
@@ -472,7 +486,7 @@ function ProjectsList() {
                 {(useFolderMode || workflows.length > 0) && (
                     <div
                         onClick={handleFolderClick}
-                        className="group relative flex flex-col h-[350px] bg-white dark:bg-zinc-950/40 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-2xl overflow-hidden cursor-pointer hover:border-yellow-400 dark:hover:border-yellow-300 hover:shadow-[0_0_30px_rgba(255,221,0,0.12)] transition-all duration-300 items-center justify-center gap-5"
+                        className="group relative flex flex-col h-[430px] bg-white dark:bg-zinc-950/40 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-2xl overflow-hidden cursor-pointer hover:border-yellow-400 dark:hover:border-yellow-300 hover:shadow-[0_0_30px_rgba(255,221,0,0.12)] transition-all duration-300 items-center justify-center gap-5"
                         title="Open folder to see more projects & n8n workflows"
                     >
                         {/* 3D folder icon */}
