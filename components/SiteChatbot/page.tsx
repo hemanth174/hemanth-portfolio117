@@ -36,7 +36,9 @@ export const SiteChatbot = () => {
   const activeSuggest = aiSuggest.length > 0 ? aiSuggest : SUGGESTIONS
   const [dragY, setDragY] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
-  const dragStartY = useRef(0)
+  // Ref mirror — touch moves can arrive before React commits state,
+  // so the gesture must never depend on rendered state.
+  const dragState = useRef({ dragging: false, startY: 0 })
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const greeted = useRef(false)
 
@@ -81,7 +83,7 @@ export const SiteChatbot = () => {
         const clean = data.suggestions
           .filter((s): s is string => typeof s === 'string')
           .map((s) => s.trim())
-          .filter((s) => s.length >= 10 && s.length <= 90)
+          .filter((s) => s.length >= 12 && s.length <= 90 && s.includes('?'))
           .slice(0, 4)
         if (clean.length > 0) setAiSuggest(clean)
       })
@@ -170,22 +172,45 @@ export const SiteChatbot = () => {
   }
 
   // ── Mobile sheet: drag the handle down to close (only way to dismiss) ──
+  // Window-level listeners + ref state: immune to render races and
+  // pointer-capture quirks on small touch screens.
   const onDragStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragState.current = { dragging: true, startY: e.clientY }
     setIsDragging(true)
-    dragStartY.current = e.clientY
-    e.currentTarget.setPointerCapture(e.pointerId)
-  }
-  const onDragMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging) return
-    const dy = e.clientY - dragStartY.current
-    setDragY(dy > 0 ? dy : 0)
-  }
-  const onDragEnd = () => {
-    if (!isDragging) return
-    setIsDragging(false)
-    if (dragY > SHEET_CLOSE_PX) setOpen(false)
     setDragY(0)
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      // capture unsupported — window listeners still track the gesture
+    }
   }
+
+  useEffect(() => {
+    if (!isDragging) return
+    const move = (e: PointerEvent) => {
+      if (!dragState.current.dragging) return
+      // Prevent the page behind from hijacking the gesture mid-drag
+      if (e.cancelable) e.preventDefault()
+      const dy = e.clientY - dragState.current.startY
+      setDragY(dy > 0 ? dy : 0)
+    }
+    const end = (e: PointerEvent) => {
+      if (!dragState.current.dragging) return
+      dragState.current.dragging = false
+      const dy = e.clientY - dragState.current.startY
+      setIsDragging(false)
+      setDragY(0)
+      if (dy > SHEET_CLOSE_PX) setOpen(false)
+    }
+    window.addEventListener('pointermove', move, { passive: false })
+    window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
+    return () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', end)
+      window.removeEventListener('pointercancel', end)
+    }
+  }, [isDragging])
 
   const messages = (
     <>
@@ -386,10 +411,8 @@ export const SiteChatbot = () => {
         <div className="sitechat-mac-open-mobile overflow-hidden rounded-t-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-2xl flex flex-col h-[72dvh]">
           <div
             onPointerDown={onDragStart}
-            onPointerMove={onDragMove}
-            onPointerUp={onDragEnd}
-            onPointerCancel={onDragEnd}
-            className="flex touch-none cursor-grab select-none flex-col items-center gap-1 px-6 pt-2.5 pb-1 active:cursor-grabbing shrink-0"
+            style={{ touchAction: 'none' }}
+            className="flex cursor-grab select-none flex-col items-center gap-1 px-6 py-3 active:cursor-grabbing shrink-0"
           >
             <span className="h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
             <span className="text-[9px] font-bold tracking-[0.3em] text-zinc-400 dark:text-zinc-500">

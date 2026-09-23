@@ -424,20 +424,30 @@ Return exactly 4 short visitor questions, one per line, nothing else.
 Rules for each line:
 - Under 60 characters, plain text, no numbering, no bullets, no quotes.
 - Ask about the portfolio owner: his projects (HOAS hostel system, Home Automation, SyllabiQ, restaurant site, LLM assistant), skills, experience, or contact.
-- Sound like something a curious recruiter or visitor would tap, e.g. "Tell me about the HOAS project".`;
+- Sound like something a curious recruiter or visitor would tap, e.g. "Tell me about the HOAS project".
+- Each line MUST be a complete question ending with a question mark. No markdown, no symbols, no slashes, no numbering — just the plain question text.`;
 
-const parseSuggestions = (text: string): string[] =>
-  text
-    .split('\n')
-    .map((line) =>
-      line
-        .replace(/^\s*[\d]+[.)\-:]\s*/, '')
-        .replace(/^[\s*•\-–>"]+/, '')
-        .replace(/["“”]+$/, '')
-        .trim()
-    )
-    .filter((line) => line.length >= 10 && line.length <= 90)
-    .slice(0, 4);
+const parseSuggestions = (text: string): string[] => {
+  const out: string[] = [];
+  for (const raw of text.split('\n')) {
+    const line = raw
+      .replace(/^\s*[\d]+[.)\-:]\s*/, '')
+      .replace(/^[*\s•\-–>#"“”'/\\|]+/, '')
+      .replace(/[*_`#]+/g, '')
+      .replace(/[:*/\\|]+$/, '')
+      .replace(/["“”]+$/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    // Must read like a real visitor question — reject symbol soup.
+    if (line.length < 12 || line.length > 90) continue;
+    if (!line.includes('?')) continue;
+    if (!/[a-zA-Z]{4,}/.test(line)) continue;
+    if (/[*/\\|]{2,}/.test(line)) continue;
+    out.push(line);
+    if (out.length >= 4) break;
+  }
+  return out;
+};
 
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown>;
