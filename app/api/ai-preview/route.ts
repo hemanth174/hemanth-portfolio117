@@ -1,10 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/mongodb';
 
 type ProjectContext = {
   title: string;
   description: string;
   liveUrl: string;
   codeUrl: string;
+};
+
+/** Free-key protection: max calls per visitor per day, per kind. */
+const DAILY_LIMIT = 20;
+const SUGGEST_LIMIT = 12;
+
+const getClientIp = (request: NextRequest): string => {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) return forwarded.split(',')[0].trim().slice(0, 80);
+  return request.headers.get('x-real-ip')?.trim().slice(0, 80) || 'unknown';
+};
+
+const todayKey = () => new Date().toISOString().slice(0, 10);
+
+const checkRateLimit = async (ip: string, kind: 'ask' | 'suggest'): Promise<boolean> => {
+  try {
+    const { db } = await connectToDatabase();
+    const col = db.collection('ai_usage');
+    col.createIndex({ at: 1 }, { expireAfterSeconds: 45 * 24 * 3600 }).catch(() => {});
+    const day = todayKey();
+    const cap = kind === 'suggest' ? SUGGEST_LIMIT : DAILY_LIMIT;
+    const count = await col.countDocuments({ ip, day, kind });
+    if (count >= cap) return false;
+    await col.insertOne({ ip, day, kind, at: new Date() });
+    return true;
+  } catch {
+    // Fail open so the bot stays up if the database hiccups.
+    return true;
+  }
 };
 
 type GeminiResponse = {
@@ -56,14 +86,24 @@ const getContextFromBody = (body: Record<string, unknown>): ProjectContext => ({
   codeUrl: asText(body.codeUrl, 260),
 });
 
-const createSystemPrompt = (context: ProjectContext) => `You are the AI assistant for a single portfolio project preview.
+const PORTFOLIO_FACTS = `Name: Hemanth Atthuluri — B.Sc. undergraduate, upskilling at NIAT (2026).
+Skills: C++, Python, React, Node.js — full-stack web products plus AI experiments.
+Projects: HOAS (Hostel Operational Accountability System — complaint tracking with role-based management for students, wardens and management; live); SyllabiQ (exam syllabus tracker with subject-wise progress and exam countdown); Ember and Oak (premium fine-dining restaurant website, freelance demo); LLM Student Assistant (AI study companion on Hugging Face Spaces); Home Automation (Physical AI build shown at Maker's Conclave).
+Contact: email ramasaiahemanth@gmail.com, GitHub hemanth174, LinkedIn Hemanth Atthuluri, plus WhatsApp and Instagram links in the site footer, and a contact form in the CONTACT section.
+Open to: internships, freelance work, and collaborations.`;
+
+const SMALL_TALK = `- Behave like a normal friendly assistant for small talk: greetings (hi, hello, hey), thanks, goodbye, who you are, what you can do, and the current time or date (use CURRENT TIME below).`;
+
+const createProjectPrompt = (context: ProjectContext, now: string) =>
+  `You are the AI assistant for a single portfolio project preview.
+Current date and time (UTC): ${now}
 
 Rules:
-- Answer only questions about the active project in PROJECT_CONTEXT.
+- Answer questions about the active project in PROJECT_CONTEXT.
+${SMALL_TALK}
+- For anything else — general coding help, homework, other projects, personal, school, news — reply exactly: "I can only answer questions about this project."
 - Stay precise, factual, and consistent. Prefer one clear answer over multiple variations.
 - If the same question is asked again, give the same direct answer.
-- If the user asks about anything outside this project, reply exactly: "I can only answer questions about this project."
-- Do not answer general coding, unrelated portfolio, personal, school, news, or other project questions.
 - Do not invent features, tech stack, metrics, credentials, deployment details, or private information.
 - If PROJECT_CONTEXT does not contain enough detail, say what is known from the context and what is not specified.
 - Keep answers short, clear, and plain. Do not use markdown, bullets, numbering, bold, italics, or leading asterisks.
@@ -74,6 +114,21 @@ Title: ${context.title}
 Description: ${context.description || 'Not specified'}
 Live URL: ${context.liveUrl || 'Not specified'}
 Code URL: ${context.codeUrl || 'Not specified'}`;
+
+const createSitePrompt = (now: string) =>
+  `You are Hemanth's portfolio AI assistant on his personal portfolio website.
+Current date and time (UTC): ${now}
+
+PORTFOLIO FACTS:
+${PORTFOLIO_FACTS}
+
+Rules:
+- Answer questions about Hemanth: background, education, skills, projects, experience, events, and how to reach him. Use PORTFOLIO FACTS first.
+${SMALL_TALK}
+- For anything unrelated to Hemanth and his portfolio (general coding help, homework, news, other people), reply exactly: "Sorry, I can only help with questions about Hemanth's portfolio and projects."
+- Do not invent metrics, credentials, deployment details, or private information. If something is unknown, say so and point to the CONTACT section.
+- Keep answers short, clear, and plain. Do not use markdown, bullets, numbering, bold, italics, or leading asterisks.
+- Do not add preambles, disclaimers, or filler text.`;
 
 const normalizeAssistantText = (text: string) => {
   return text
@@ -272,7 +327,16 @@ const renderAssistantHtml = (context: ProjectContext, keyConfigured: boolean) =>
         const data = await res.json();
         typingEl.classList.add('hidden');
 
-        if (!res.ok) throw new Error(data.error || 'The AI is unavailable right now.');
+        if (!res.ok) {
+          if (res.status === 429 || data.limitReached) {
+            addMessage('assistant', data.error || 'Daily free limit reached (20/20). Please come back tomorrow.');
+            input.disabled = true;
+            sendBtn.disabled = true;
+            input.placeholder = 'Daily limit reached (20/20)';
+            return;
+          }
+          throw new Error(data.error || 'The AI is unavailable right now.');
+        }
         addMessage('assistant', data.answer);
       } catch (err) {
         typingEl.classList.add('hidden');
@@ -309,6 +373,72 @@ export async function GET(request: NextRequest) {
   });
 }
 
+const callGemini = async (
+  apiKey: string,
+  systemText: string,
+  userText: string,
+  maxOutputTokens: number,
+  temperature: number
+): Promise<string> => {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${getModelName()}:generateContent`;
+  const geminiResponse = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
+    },
+    body: JSON.stringify({
+      system_instruction: {
+        parts: [{ text: systemText }],
+      },
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: userText }],
+        },
+      ],
+      generationConfig: {
+        temperature,
+        maxOutputTokens,
+      },
+    }),
+  });
+
+  const data = (await geminiResponse.json()) as GeminiResponse;
+
+  if (!geminiResponse.ok) {
+    throw new Error(data.error?.message || 'Gemini could not answer right now.');
+  }
+
+  return (
+    data.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text)
+      .filter(Boolean)
+      .join('\n')
+      .trim() || ''
+  );
+};
+
+const SUGGEST_SYSTEM = `You write proactive chat suggestions for a portfolio website's AI assistant.
+Return exactly 4 short visitor questions, one per line, nothing else.
+Rules for each line:
+- Under 60 characters, plain text, no numbering, no bullets, no quotes.
+- Ask about the portfolio owner: his projects (HOAS hostel system, Home Automation, SyllabiQ, restaurant site, LLM assistant), skills, experience, or contact.
+- Sound like something a curious recruiter or visitor would tap, e.g. "Tell me about the HOAS project".`;
+
+const parseSuggestions = (text: string): string[] =>
+  text
+    .split('\n')
+    .map((line) =>
+      line
+        .replace(/^\s*[\d]+[.)\-:]\s*/, '')
+        .replace(/^[\s*•\-–>"]+/, '')
+        .replace(/["“”]+$/, '')
+        .trim()
+    )
+    .filter((line) => line.length >= 10 && line.length <= 90)
+    .slice(0, 4);
+
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown>;
 
@@ -320,11 +450,9 @@ export async function POST(request: NextRequest) {
 
   const question = asText(body.question, 600);
   const context = getContextFromBody(body);
+  const scope = body.scope === 'site' ? 'site' : 'project';
+  const wantSuggestions = body.suggest === true;
   const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!question) {
-    return NextResponse.json({ error: 'Please enter a project question.' }, { status: 400 });
-  }
 
   if (!apiKey) {
     return NextResponse.json(
@@ -333,53 +461,53 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${getModelName()}:generateContent`;
-  
-  try {
-    const geminiResponse = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: createSystemPrompt(context) }],
-        },
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: question }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 1000,
-        },
-      }),
-    });
-
-    const data = (await geminiResponse.json()) as GeminiResponse;
-
-    if (!geminiResponse.ok) {
+  // ── Suggestion generation: own light quota, never touches the ask limit ──
+  if (wantSuggestions) {
+    const allowed = await checkRateLimit(getClientIp(request), 'suggest');
+    if (!allowed) {
+      return NextResponse.json({ error: 'Suggestion quota exhausted.', suggestUnavailable: true }, { status: 429 });
+    }
+    try {
+      const raw = await callGemini(apiKey, SUGGEST_SYSTEM, 'Give me 4 suggested visitor questions.', 300, 0.7);
+      const suggestions = parseSuggestions(raw);
+      if (suggestions.length === 0) {
+        return NextResponse.json({ error: 'No suggestions generated.', suggestUnavailable: true }, { status: 502 });
+      }
+      return NextResponse.json({ suggestions });
+    } catch (err) {
       return NextResponse.json(
-        { error: data.error?.message || 'Gemini could not answer right now.' },
-        { status: 502 },
+        { error: err instanceof Error ? err.message : 'Failed to communicate with Gemini API.' },
+        { status: 500 }
       );
     }
+  }
 
-    const answer = data.candidates?.[0]?.content?.parts
-      ?.map((part) => part.text)
-      .filter(Boolean)
-      .join('\n')
-      .trim();
+  if (!question) {
+    return NextResponse.json({ error: 'Please enter a project question.' }, { status: 400 });
+  }
 
+  const allowed = await checkRateLimit(getClientIp(request), 'ask');
+  if (!allowed) {
+    return NextResponse.json(
+      {
+        error: `Daily free limit reached (${DAILY_LIMIT}/${DAILY_LIMIT}). Please come back tomorrow for more questions.`,
+        limitReached: true,
+      },
+      { status: 429 }
+    );
+  }
+
+  const now = new Date().toUTCString();
+  const systemPrompt = scope === 'site' ? createSitePrompt(now) : createProjectPrompt(context, now);
+
+  try {
+    const answer = await callGemini(apiKey, systemPrompt, question, 1000, 0.1);
     return NextResponse.json({
       answer: normalizeAssistantText(answer || 'I can only answer questions about this project.'),
     });
   } catch (err) {
     return NextResponse.json(
-      { error: 'Failed to communicate with Gemini API.' },
+      { error: err instanceof Error ? err.message : 'Failed to communicate with Gemini API.' },
       { status: 500 }
     );
   }

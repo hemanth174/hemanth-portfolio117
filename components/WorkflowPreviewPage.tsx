@@ -36,6 +36,7 @@ export default function WorkflowPreviewPage() {
   const [mounted, setMounted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [assistantQuestion, setAssistantQuestion] = useState('');
+  const [assistantLocked, setAssistantLocked] = useState(false);
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([
     {
@@ -130,8 +131,11 @@ export default function WorkflowPreviewPage() {
         }),
       });
 
-      const data = (await response.json()) as { answer?: string; error?: string };
-      if (!response.ok) throw new Error(data.error || 'The assistant is unavailable right now.');
+      const data = (await response.json()) as { answer?: string; error?: string; limitReached?: boolean };
+      if (!response.ok) {
+        if (response.status === 429 || data.limitReached) setAssistantLocked(true);
+        throw new Error(data.error || 'The assistant is unavailable right now.');
+      }
 
       setAssistantMessages((currentMessages) => [
         ...currentMessages,
@@ -299,13 +303,20 @@ export default function WorkflowPreviewPage() {
                       <textarea
                         value={assistantQuestion}
                         onChange={(event) => setAssistantQuestion(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' && !event.shiftKey) {
+                            event.preventDefault();
+                            event.currentTarget.form?.requestSubmit();
+                          }
+                        }}
                         rows={1}
-                        placeholder="Ask about this workflow..."
+                        placeholder={assistantLocked ? 'Daily limit reached (20/20) — back tomorrow' : 'Ask about this workflow... (Enter to send)'}
+                        disabled={assistantLocked}
                         className={`flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-zinc-500 ${isDarkTheme ? 'text-zinc-100' : 'text-zinc-900'}`}
                       />
                       <button
                         type="submit"
-                        disabled={assistantLoading || !assistantQuestion.trim()}
+                        disabled={assistantLoading || assistantLocked || !assistantQuestion.trim()}
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-yellow-400 text-black transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                         aria-label="Send question"
                         title="Send question"

@@ -7,12 +7,14 @@ import { Experience } from "@/components/Experience/page";
 import { Events } from "@/components/Events/page";
 import { Contact } from "@/components/Contact/page";
 import { Footer } from "@/components/Footer/page";
+import { SiteChatbot } from "@/components/SiteChatbot/page";
 import { VisitorTracker } from "@/components/VisitorTracker";
 
 export default function Home() {
   return (
     <>
       <VisitorTracker />
+      <SiteChatbot />
       <div id="section1" className="scroll-mt-0">
         <HomeSection />
       </div>
