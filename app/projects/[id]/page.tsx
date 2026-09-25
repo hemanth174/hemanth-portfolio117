@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { ArrowLeft, ArrowRight, ExternalLink, Moon, Play, Sun } from 'lucide-react'
 import { getNextProject, getStoryFor, type StoryProject } from '@/lib/projectStories'
+import { toggleThemeWithRipple } from '@/lib/themeTransition'
 
 const readProjectCache = (): StoryProject[] => {
   try {
@@ -52,17 +53,45 @@ export default function ProjectStoryPage() {
   // Cache first (instant return visits), network refreshes after.
   const [projects, setProjects] = useState<StoryProject[]>(readProjectCache)
   const [loading, setLoading] = useState(() => readProjectCache().length === 0)
-  const { theme, setTheme } = useTheme()
+  const { theme, resolvedTheme, setTheme } = useTheme()
   // `theme` is undefined until hydration — fall back to light (the default).
-  const isDark = theme === 'dark'
+  const activeTheme = resolvedTheme ?? theme
+  const isDark = activeTheme !== 'light'
 
   useEffect(() => {
     window.scrollTo(0, 0)
     let cancelled = false
-    fetch('/api/projects')
-      .then((r) => r.json())
+    const loadWithTimeout = (url: string, ms: number): Promise<any> => {
+      const controller = new AbortController()
+      const timer = window.setTimeout(() => controller.abort(), ms)
+      return fetch(url, { signal: controller.signal })
+        .then((r) => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`)
+          return r.json()
+        })
+        .finally(() => window.clearTimeout(timer))
+    }
+    // Fast path: single indexed project (tiny payload, no base64 siblings).
+    // Falls back to the full list, then to any-age cache — never a dead end.
+    loadWithTimeout(`/api/projects?id=${encodeURIComponent(String(id))}`, 12000)
       .then((d) => {
-        if (!cancelled && Array.isArray(d.projects)) {
+        if (cancelled) return
+        if (d.project) {
+          setProjects((prev) => {
+            const rest = prev.filter((p) => String(p._id ?? p.id) !== String(id))
+            return [...rest, d.project]
+          })
+          return null
+        }
+        if (Array.isArray(d.projects) && d.projects.length > 0) {
+          setProjects(d.projects)
+          return null
+        }
+        return loadWithTimeout('/api/projects', 15000)
+      })
+      .then((d) => {
+        if (cancelled || !d) return
+        if (Array.isArray(d.projects) && d.projects.length > 0) {
           setProjects(d.projects)
           try {
             localStorage.setItem('portfolio_projects_cache', JSON.stringify(d.projects))
@@ -111,7 +140,7 @@ export default function ProjectStoryPage() {
           <p className="text-sm tracking-[0.3em] text-zinc-400 dark:text-zinc-600">STORY NOT FOUND</p>
           <h1 className="text-3xl md:text-4xl font-black">This project doesn&apos;t exist (yet).</h1>
           <Link
-            href="/#section4"
+            href="/#section3"
             className="inline-flex items-center gap-2 mt-2 px-6 py-3 bg-yellow-400 dark:bg-yellow-300 text-black font-bold text-sm tracking-[0.2em] hover:bg-yellow-500 dark:hover:bg-yellow-400 transition-colors"
           >
             <ArrowLeft size={16} /> ALL PROJECTS
@@ -137,10 +166,10 @@ export default function ProjectStoryPage() {
 
       {/* ── Floating theme toggle — fixed, stays visible while scrolling ── */}
       <button
-        onClick={() => setTheme(isDark ? 'light' : 'dark')}
+        onClick={(e) => toggleThemeWithRipple(e, isDark, setTheme)}
         aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-        className="fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-yellow-400 dark:bg-yellow-300 text-black shadow-[0_8px_28px_rgba(250,204,21,0.45)] hover:bg-yellow-500 dark:hover:bg-yellow-400 transition-all cursor-pointer active:scale-95"
+        className="fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-yellow-400 dark:bg-yellow-300 text-black shadow-[0_8px_28px_rgba(250,204,21,0.45)] hover:bg-yellow-500 dark:hover:bg-yellow-400 transition-all cursor-pointer active:scale-90"
       >
         {isDark ? <Sun size={17} /> : <Moon size={17} />}
       </button>
@@ -149,7 +178,7 @@ export default function ProjectStoryPage() {
       <div className="relative border-b border-zinc-200 dark:border-zinc-900">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-3">
           <Link
-            href="/#section4"
+            href="/#section3"
             className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.25em] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft size={14} /> ALL PROJECTS

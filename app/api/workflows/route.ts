@@ -52,28 +52,82 @@ function stripCredentials(obj: unknown): unknown {
 }
 
 // GET - Fetch all workflows (public, but credentials stripped from workflowJson)
-export async function GET() {
-  try {
-    const { db } = await connectToDatabase();
-    const workflows = await db
-      .collection('workflows')
-      .find({})
-      .sort({ createdAt: -1 })
-      .toArray();
+// `?summary=1` omits workflowJson for fast list rendering.
+// `?id=<workflowId>` returns a single workflow (with JSON) for the preview page.
+let workflowsCache: { at: number; payload: unknown[] } | null = null;
+const WORKFLOWS_CACHE_TTL_MS = 30_000;
 
-    // Strip credentials from workflowJson before serving
-    const sanitizedWorkflows = workflows.map((wf) => {
-      if (wf.workflowJson) {
+export async function GET(request: NextRequest) {
+  try {
+    const summary = request.nextUrl.searchParams.get('summary') === '1';
+    const singleId = request.nextUrl.searchParams.get('id');
+    const now = Date.now();
+
+    if (summary && !singleId && workflowsCache && now - workflowsCache.at < WORKFLOWS_CACHE_TTL_MS) {
+      return NextResponse.json(
+        { workflows: workflowsCache.payload },
+        { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600' } },
+      );
+    }
+
+    const { db } = await connectToDatabase();
+
+    // Single-workflow fetch for the preview canvas (small payload, indexed _id lookup).
+    if (singleId) {
+      let objectId: ObjectId;
+      try {
+        objectId = new ObjectId(singleId);
+      } catch {
+        return NextResponse.json({ error: 'Invalid workflow ID.' }, { status: 400 });
+      }
+      const wf = await db.collection('workflows').findOne({ _id: objectId });
+      if (!wf) return NextResponse.json({ error: 'Workflow not found.' }, { status: 404 });
+      let workflowJson = wf.workflowJson as string | null;
+      if (workflowJson) {
         try {
-          const parsed = JSON.parse(wf.workflowJson as string);
-          const stripped = stripCredentials(parsed);
-          return { ...wf, workflowJson: JSON.stringify(stripped, null, 2) };
+          workflowJson = JSON.stringify(stripCredentials(JSON.parse(workflowJson)), null, 2);
         } catch {
-          return { ...wf, workflowJson: null };
+          workflowJson = null;
         }
       }
-      return wf;
-    });
+      return NextResponse.json(
+        { workflow: { ...wf, workflowJson } },
+        { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600' } },
+      );
+    }
+
+    const workflows = summary
+      ? await db
+        .collection('workflows')
+        .find({})
+        .project({ title: 1, description: 1, category: 1, tags: 1, thumbnail: 1, nodeCount: 1, createdAt: 1 })
+        .sort({ createdAt: -1 })
+        .toArray()
+      : await db
+        .collection('workflows')
+        .find({})
+        .sort({ createdAt: -1 })
+        .toArray();
+
+    // Strip credentials from workflowJson before serving (skipped for summary lists)
+    const sanitizedWorkflows = summary
+      ? workflows
+      : workflows.map((wf) => {
+        if (wf.workflowJson) {
+          try {
+            const parsed = JSON.parse(wf.workflowJson as string);
+            const stripped = stripCredentials(parsed);
+            return { ...wf, workflowJson: JSON.stringify(stripped, null, 2) };
+          } catch {
+            return { ...wf, workflowJson: null };
+          }
+        }
+        return wf;
+      });
+
+    if (summary) {
+      workflowsCache = { at: now, payload: sanitizedWorkflows };
+    }
 
     return NextResponse.json(
       { workflows: sanitizedWorkflows },
@@ -155,6 +209,7 @@ export async function POST(request: NextRequest) {
 
     const result = await db.collection('workflows').insertOne(newWorkflow);
 
+    workflowsCache = null;
     revalidatePath('/api/workflows');
     revalidatePath('/');
 
@@ -192,6 +247,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Workflow not found.' }, { status: 404 });
     }
 
+    workflowsCache = null;
     revalidatePath('/api/workflows');
     revalidatePath('/');
 
@@ -276,6 +332,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Workflow not found.' }, { status: 404 });
     }
 
+    workflowsCache = null;
     revalidatePath('/api/workflows');
     revalidatePath('/');
 

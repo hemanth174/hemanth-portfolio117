@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ExternalLink, Radio, Workflow, FolderOpen } from 'lucide-react';
+import { ExternalLink, Radio, RefreshCw, Workflow, FolderOpen } from 'lucide-react';
 import { transition } from '../Skills/page';
 import { trackProjectClick, trackWorkflowAction } from '@/lib/tracker';
 
@@ -81,6 +81,51 @@ const requiresDirectOpen = (liveUrl?: string) => {
     } catch {
         return false;
     }
+};
+
+// ─── Resilient project loading ───────────────────────────────────────────────
+// Rules this layer follows so the grid can NEVER go blank from one bad response:
+// 1. Fetch with a timeout (deployed cold starts can hang, not just fail).
+// 2. Try fast summary first, then the full list as fallback.
+// 3. NEVER replace good state — or the persisted cache — with an empty array.
+// 4. Any-age cache is a valid last resort; only then show an error + Retry.
+
+const readProjectCache = (): Project[] => {
+    try {
+        const raw = localStorage.getItem('portfolio_projects_cache_v2') || localStorage.getItem('portfolio_projects_cache');
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        const list = Array.isArray(parsed) ? parsed : parsed?.data;
+        return Array.isArray(list) ? list : [];
+    } catch {
+        return [];
+    }
+};
+
+const writeProjectCache = (list: Project[]) => {
+    if (!Array.isArray(list) || list.length === 0) return;
+    try { localStorage.setItem('portfolio_projects_cache_v2', JSON.stringify({ at: Date.now(), data: list })); } catch {}
+    try { localStorage.setItem('portfolio_projects_cache', JSON.stringify(list)); } catch {}
+};
+
+const fetchJson = async (url: string, timeoutMs: number): Promise<any> => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+        return await res.json();
+    } finally {
+        window.clearTimeout(timer);
+    }
+};
+
+const nonEmptyProjects = (value: unknown): Project[] | null => {
+    if (value && typeof value === 'object') {
+        const list = (value as { projects?: unknown }).projects;
+        if (Array.isArray(list) && list.length > 0) return list as Project[];
+    }
+    return null;
 };
 
 // ─── N8n category colour map ──────────────────────────────────────────────────
@@ -167,11 +212,7 @@ const N8nCard = ({ workflow }: { workflow: N8nWorkflow }) => {
                     <a
                         href={`/workflows/${workflow._id}`}
                         onClick={() => trackWorkflowAction(workflow.title, 'live_click')}
-                        className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-black tracking-widest uppercase font-mono transition-all border ${
-                            !workflow.workflowJson
-                                ? 'pointer-events-none border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-700'
-                                : 'border-[#EA4B35]/40 text-[#EA4B35] hover:bg-[#EA4B35] hover:text-white hover:border-[#EA4B35]'
-                        }`}
+                        className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-black tracking-widest uppercase font-mono transition-all border border-[#EA4B35]/40 text-[#EA4B35] hover:bg-[#EA4B35] hover:text-white hover:border-[#EA4B35]"
                     >
                         <Radio size={10} />
                         Live now
@@ -256,9 +297,9 @@ const ProjectCard = ({ project, noHover }: { project: Project; noHover?: boolean
     const storyHref = `/projects/${project._id ?? project.id ?? ''}`;
 
     return (
-        <div className={` group h-[430px] rounded-2xl transition-all duration-300`}>
+        <div className={` group flex h-full flex-col rounded-2xl transition-all duration-300`}>
             {/* Inner card: overflow-hidden safe here since wrapper has no overflow clip */}
-            <div className="flex flex-col h-full bg-white dark:bg-zinc-950/40 border-t-[3px] border-t-yellow-400 dark:border-t-yellow-300 rounded-[14px] overflow-hidden shadow-lg transition-all duration-300">
+            <div className="flex flex-col flex-1 bg-white dark:bg-zinc-950/40 border-t-[3px] border-t-yellow-400 dark:border-t-yellow-300 rounded-[14px] overflow-hidden shadow-lg transition-all duration-300">
             <div className="relative w-full h-40 flex items-center justify-center overflow-hidden bg-zinc-100 dark:bg-black/40">
                 {/* Category Badge */}
                 <div className="absolute top-3 right-3 z-20 transition-all duration-300 transform opacity-0 group-hover:opacity-100 translate-y-[-10px] group-hover:translate-y-0">
@@ -294,16 +335,16 @@ const ProjectCard = ({ project, noHover }: { project: Project; noHover?: boolean
                 )}
             </div>
 
-            <div className="flex flex-col flex-1 p-6 text-center">
-                <h1 className={`text-xl font-bold text-zinc-900 dark:text-white transition-colors mb-3 line-clamp-1 ${noHover ? '' : 'group-hover:text-amber-600 dark:group-hover:text-yellow-300'}`} title={project.title}>
+            <div className="flex flex-1 flex-col px-6 pt-4 pb-1 text-center">
+                <h1 className={`text-xl font-bold text-zinc-900 dark:text-white transition-colors mb-1.5 line-clamp-1 ${noHover ? '' : 'group-hover:text-amber-600 dark:group-hover:text-yellow-300'}`} title={project.title}>
                     {project.title}
                 </h1>
-                <p className="text-sm text-zinc-600 dark:text-gray-400 font-mono line-clamp-2" title={project.description}>
+                <p className="text-sm text-zinc-600 dark:text-gray-400 font-mono line-clamp-2 min-h-[2.6rem]" title={project.description}>
                     {project.description}
                 </p>
             </div>
 
-            <div className="flex flex-col gap-3 p-6 pt-0 justify-center mt-auto">
+            <div className="mt-auto flex flex-col gap-2.5 px-6 pb-5 pt-2 justify-center">
                 {/* Read the project story — the primary action */}
                 <a href={storyHref}
                     className="flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-400 dark:bg-yellow-300 hover:bg-yellow-500 dark:hover:bg-yellow-400 text-black font-roboto font-bold text-[10px] sm:text-xs md:text-sm tracking-[0.15em] transition-colors duration-300 shadow-sm">
@@ -361,44 +402,119 @@ const ProjectCard = ({ project, noHover }: { project: Project; noHover?: boolean
 function ProjectsList() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [projectsLoading, setProjectsLoading] = useState(true);
+    const [projectsError, setProjectsError] = useState(false);
+    const [reloadKey, setReloadKey] = useState(0);
     const [workflows, setWorkflows] = useState<N8nWorkflow[]>([]);
     const [workflowsLoading, setWorkflowsLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'notebooks'>('all');
-    const [folderOpen, setFolderOpen] = useState(false);
+    const [folderOpen, setFolderOpen] = useState<boolean>(() => {
+        // Restore folder open/closed state from cookie (persists across visits).
+        try {
+            if (typeof document === 'undefined') return false;
+            const match = document.cookie.match(/(?:^|;\s*)portfolio_folder_open=([^;]*)/);
+            return match?.[1] === '1';
+        } catch {
+            return false;
+        }
+    });
     const [folderAnimating, setFolderAnimating] = useState(false);
     const folderRef = useRef<HTMLDivElement>(null);
 
+    // Persist folder open/closed state in a cookie (1 year).
     useEffect(() => {
-        // Load projects from cache / API
         try {
-            const cached = localStorage.getItem('portfolio_projects_cache');
-            if (cached) {
-                const parsed = JSON.parse(cached);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    setProjects(parsed);
-                    setProjectsLoading(false);
+            document.cookie = `portfolio_folder_open=${folderOpen ? '1' : '0'}; path=/; max-age=31536000; SameSite=Lax`;
+        } catch {}
+    }, [folderOpen]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        // Instant paint from any cache, then revalidate in the background.
+        const cached = readProjectCache();
+        if (cached.length > 0) {
+            setProjects(cached);
+            setProjectsLoading(false);
+        } else {
+            setProjectsLoading(true);
+        }
+        setProjectsError(false);
+
+        try {
+            const raw = localStorage.getItem('portfolio_workflows_cache_v2');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed?.data) && parsed.data.length > 0) {
+                    setWorkflows(parsed.data);
+                    setWorkflowsLoading(false);
                 }
             }
         } catch {}
 
-        fetch('/api/projects')
-            .then((r) => r.json())
-            .then((d) => {
-                if (d.projects) {
-                    setProjects(d.projects);
-                    try { localStorage.setItem('portfolio_projects_cache', JSON.stringify(d.projects)); } catch {}
+        const loadProjects = async () => {
+            // 1) Fast lightweight summary.
+            try {
+                const data = await fetchJson('/api/projects?summary=1', 12000);
+                const list = nonEmptyProjects(data);
+                if (list) {
+                    if (!cancelled) {
+                        setProjects(list);
+                        setProjectsLoading(false);
+                        setProjectsError(false);
+                    }
+                    writeProjectCache(list);
+                    return;
                 }
+            } catch {}
+            if (cancelled) return;
+            // 2) Full list fallback (older proxies / edge cases).
+            try {
+                const data = await fetchJson('/api/projects', 15000);
+                const list = nonEmptyProjects(data);
+                if (list) {
+                    if (!cancelled) {
+                        setProjects(list);
+                        setProjectsLoading(false);
+                        setProjectsError(false);
+                    }
+                    writeProjectCache(list);
+                    return;
+                }
+            } catch {}
+            if (cancelled) return;
+            // 3) Any-age cache as last resort — a stale grid beats a blank one.
+            const fallback = readProjectCache();
+            if (fallback.length > 0) {
+                setProjects(fallback);
+                setProjectsError(false);
+            } else {
+                setProjectsError(true);
+            }
+            setProjectsLoading(false);
+        };
+
+        loadProjects();
+
+        // Load n8n workflow summaries (no heavy workflowJson payload).
+        fetchJson('/api/workflows?summary=1', 12000)
+            .then((d) => {
+                if (cancelled) return;
+                if (d.workflows) setWorkflows(d.workflows);
+                try { localStorage.setItem('portfolio_workflows_cache_v2', JSON.stringify({ at: Date.now(), data: d.workflows })); } catch {}
             })
             .catch(() => {})
-            .finally(() => setProjectsLoading(false));
+            .finally(() => {
+                if (!cancelled) setWorkflowsLoading(false);
+            });
 
-        // Load n8n workflows
-        fetch('/api/workflows')
-            .then((r) => r.json())
-            .then((d) => { if (d.workflows) setWorkflows(d.workflows); })
-            .catch(() => {})
-            .finally(() => setWorkflowsLoading(false));
-    }, []);
+        // NOTE: no full-list prefetch here on purpose — the full payload can
+        // contain multi-MB admin images and story bodies. The folder already has
+        // everything it needs from the summaries; story pages fetch one project
+        // each via `/api/projects?id=…`.
+        return () => {
+            cancelled = true;
+        };
+    }, [reloadKey]);
 
     // Sort projects: Big Projects first, Small Projects second, then order/creation date descending
     const sortedProjects = [...projects].sort((a, b) => {
@@ -449,7 +565,7 @@ function ProjectsList() {
     };
 
     return (
-        <section id="section4" className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white px-6 md:px-10 pt-24 pb-10">
+        <section id="section3" className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white px-6 md:px-10 pt-24 pb-10">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 border-b border-zinc-200 dark:border-zinc-900 pb-6">
                 <h1 className={`tracking-widest text-4xl font-roboto text-amber-600 dark:text-yellow-300 font-bold ${transition}`}>
@@ -473,8 +589,24 @@ function ProjectsList() {
             </div>
 
             {/* Main project grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
-                {visibleProjects.map((project) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 items-stretch">
+                {projectsLoading && visibleProjects.length === 0
+                    ? Array.from({ length: 3 }).map((_, i) => (
+                        <div key={`skeleton-${i}`} className="flex h-full min-h-[380px] animate-pulse flex-col overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950/40">
+                            <div className="h-40 w-full bg-zinc-200 dark:bg-zinc-900" />
+                            <div className="flex flex-col gap-3 p-6">
+                                <div className="mx-auto h-5 w-2/3 rounded bg-zinc-200 dark:bg-zinc-800" />
+                                <div className="mx-auto h-3 w-full rounded bg-zinc-200 dark:bg-zinc-800" />
+                                <div className="mx-auto h-3 w-5/6 rounded bg-zinc-200 dark:bg-zinc-800" />
+                                <div className="mt-4 h-10 w-full rounded bg-zinc-200 dark:bg-zinc-800" />
+                                <div className="flex gap-4">
+                                    <div className="h-9 flex-1 rounded bg-zinc-200 dark:bg-zinc-800" />
+                                    <div className="h-9 flex-1 rounded bg-zinc-200 dark:bg-zinc-800" />
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                    : visibleProjects.map((project) => (
                     <ProjectCard
                         key={project._id || project.id}
                         project={project}
@@ -482,11 +614,13 @@ function ProjectsList() {
                     />
                 ))}
 
-                {/* Folder Card — always shown when folderMode or workflows exist */}
-                {(useFolderMode || workflows.length > 0) && (
+                {/* Folder Card — only when there are project cards beside it, so it
+                    can never sit alone on an empty grid. When projects fail to
+                    load, the contents panel below opens by itself instead. */}
+                {(overflowProjects.length > 0 || (workflows.length > 0 && visibleProjects.length > 0)) && (
                     <div
                         onClick={handleFolderClick}
-                        className="group relative flex flex-col h-[430px] bg-white dark:bg-zinc-950/40 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-2xl overflow-hidden cursor-pointer hover:border-yellow-400 dark:hover:border-yellow-300 hover:shadow-[0_0_30px_rgba(255,221,0,0.12)] transition-all duration-300 items-center justify-center gap-5"
+                        className="group relative flex flex-col h-full min-h-[380px] bg-white dark:bg-zinc-950/40 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-2xl overflow-hidden cursor-pointer hover:border-yellow-400 dark:hover:border-yellow-300 hover:shadow-[0_0_30px_rgba(255,221,0,0.12)] transition-all duration-300 items-center justify-center gap-5"
                         title="Open folder to see more projects & n8n workflows"
                     >
                         {/* 3D folder icon */}
@@ -505,10 +639,32 @@ function ProjectsList() {
                         </div>
                     </div>
                 )}
+
+                {/* Load-failure state — explicit error + retry, never a blank grid. */}
+                {!projectsLoading && projectsError && visibleProjects.length === 0 && (
+                    <div className="flex min-h-[380px] flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 p-8 text-center">
+                        <p className="font-mono text-sm font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+                            Projects couldn&apos;t load
+                        </p>
+                        <p className="max-w-sm text-sm text-zinc-500 dark:text-zinc-500">
+                            The server took too long to respond. Your projects are safe — please try again.
+                        </p>
+                        <button
+                            onClick={() => {
+                                setProjectsLoading(true);
+                                setReloadKey((k) => k + 1);
+                            }}
+                            className="inline-flex items-center gap-2 px-6 py-2.5 bg-yellow-400 dark:bg-yellow-300 text-black font-mono font-bold text-xs tracking-[0.2em] hover:bg-yellow-500 dark:hover:bg-yellow-400 transition-colors cursor-pointer"
+                        >
+                            <RefreshCw size={14} /> RETRY
+                        </button>
+                    </div>
+                )}
             </div>
 
-            {/* ── Folder Contents Panel ── */}
-            {folderOpen && (
+            {/* ── Folder Contents Panel (auto-expands if projects are missing so
+                workflows are never trapped behind a closed folder) ── */}
+            {(folderOpen || (projects.length === 0 && !projectsLoading)) && (overflowProjects.length > 0 || workflows.length > 0) && (
                 <div
                     ref={folderRef}
                     className="mt-8 animate-folder-open"

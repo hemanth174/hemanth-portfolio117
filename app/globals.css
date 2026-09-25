@@ -212,3 +212,38 @@ body::-webkit-scrollbar {
     font-size: 0.72rem;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Circular-reveal theme transition (View Transitions API)
+   The flash originates from the theme toggle button.
+───────────────────────────────────────────────────────────── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2147483646;
+}
+
+::view-transition-group(root) {
+  animation-duration: 650ms;
+}
+
+/* n8n canvas dotted grid (light + dark) */
+.n8n-canvas-light {
+  background-color: #f4f4f5;
+  background-image: radial-gradient(circle, #d4d4d8 1.1px, transparent 1.1px);
+  background-size: 22px 22px;
+}
+
+.n8n-canvas-dark {
+  background-color: #101014;
+  background-image: radial-gradient(circle, #3f3f46 1.1px, transparent 1.1px);
+  background-size: 22px 22px;
+}

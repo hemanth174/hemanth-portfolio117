@@ -4,6 +4,7 @@ import { transition } from "../Skills/page"
 import { useTheme } from "next-themes"
 import { Sun, Moon, Menu, ChevronDown } from "lucide-react"
 import { GridSnake } from "../GridSnake/page"
+import { toggleThemeWithRipple } from "@/lib/themeTransition"
 
 let isHydrated = false
 const hydrationListeners = new Set<() => void>()
@@ -40,14 +41,15 @@ export const HomeSection = () => {
     const sectionRef = useRef<HTMLElement | null>(null);
     const hoverFxRef = useRef<HTMLDivElement | null>(null);
     const [isHoveringHero, setIsHoveringHero] = useState(false);
-    const { theme, setTheme } = useTheme();
+    const { theme, resolvedTheme, setTheme } = useTheme();
     const hydrated = useSyncExternalStore(subscribeToHydration, getHydrationSnapshot, getServerHydrationSnapshot);
-    const isDarkTheme = hydrated ? theme === 'dark' : true;
+    const activeTheme = resolvedTheme ?? theme;
+    const isDarkTheme = hydrated ? activeTheme === 'dark' : true;
 
     const navItems = [
         { id: 'section2', label: 'ABOUT' },
-        { id: 'section3', label: 'SKILLS' },
-        { id: 'section4', label: 'PROJECTS' },
+        { id: 'section3', label: 'PROJECTS' },
+        { id: 'section4', label: 'SKILLS' },
         { id: 'section5', label: 'EXPERIENCE' },
         { id: 'section6', label: 'CERTIFICATION' },
         { id: 'section7', label: 'EVENTS' },
@@ -219,11 +221,11 @@ export const HomeSection = () => {
                             })}
                         </nav>
 
-                        {/* Premium Theme Toggle Button */}
+                        {/* Premium Theme Toggle Button — circular flash reveal from the button */}
                         <button
-                            onClick={() => setTheme(isDarkTheme ? 'light' : 'dark')}
+                            onClick={(e) => toggleThemeWithRipple(e, isDarkTheme, setTheme)}
                             aria-label={hydrated ? (isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode') : 'Switch theme'}
-                            className="flex h-9 w-9 shrink-0 items-center justify-center border border-white bg-zinc-100 dark:bg-zinc-900/50 hover:border-yellow-400 dark:hover:border-yellow-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-all cursor-pointer text-zinc-500 dark:text-zinc-400 active:scale-95 shadow-sm"
+                            className="flex h-9 w-9 shrink-0 items-center justify-center border border-white bg-zinc-100 dark:bg-zinc-900/50 hover:border-yellow-400 dark:hover:border-yellow-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-all cursor-pointer text-zinc-500 dark:text-zinc-400 active:scale-90 shadow-sm"
                             title={hydrated ? (isDarkTheme ? 'Switch to Light Mode' : 'Switch to Dark Mode') : 'Switch Theme'}
                         >
                             {!hydrated ? <Moon size={15} /> : isDarkTheme ? <Sun size={15} /> : <Moon size={15} />}
@@ -362,7 +364,7 @@ export const HomeSection = () => {
                     <div className="flex flex-col sm:flex-row gap-4 md:gap-10 font-mono w-full sm:w-auto mt-4 z-10">
                         <button 
                             onClick={() => {
-                                document.getElementById('section4')?.scrollIntoView({ behavior: 'smooth' });
+                                document.getElementById('section3')?.scrollIntoView({ behavior: 'smooth' });
                             }} 
                             className="p-3 px-6 bg-yellow-400 dark:bg-yellow-300 text-black hover:bg-yellow-500 dark:hover:bg-yellow-400 transition-colors cursor-pointer w-full sm:w-auto font-bold tracking-wider shadow-md"
                         >

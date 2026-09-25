@@ -6,6 +6,7 @@ type ProjectContext = {
   description: string;
   liveUrl: string;
   codeUrl: string;
+  workflowSummary: string;
 };
 
 /** Free-key protection: max calls per visitor per day, per kind. */
@@ -76,6 +77,7 @@ const getContextFromSearch = (url: string): ProjectContext => {
     description: asText(params.get('description'), 3000),
     liveUrl: asText(params.get('liveUrl'), 260),
     codeUrl: asText(params.get('codeUrl'), 260),
+    workflowSummary: '',
   };
 };
 
@@ -84,6 +86,7 @@ const getContextFromBody = (body: Record<string, unknown>): ProjectContext => ({
   description: asText(body.description, 3000),
   liveUrl: asText(body.liveUrl, 260),
   codeUrl: asText(body.codeUrl, 260),
+  workflowSummary: asText(body.workflowSummary, 4000),
 });
 
 const PORTFOLIO_FACTS = `Name: Hemanth Atthuluri — B.Sc. undergraduate, upskilling at NIAT (2026).
@@ -113,7 +116,8 @@ PROJECT_CONTEXT:
 Title: ${context.title}
 Description: ${context.description || 'Not specified'}
 Live URL: ${context.liveUrl || 'Not specified'}
-Code URL: ${context.codeUrl || 'Not specified'}`;
+Code URL: ${context.codeUrl || 'Not specified'}
+${context.workflowSummary ? `WORKFLOW DETAIL (node order, what each node does, connections):\n${context.workflowSummary}\nUse the WORKFLOW DETAIL to explain what any node does and which nodes connect to which.` : ''}`;
 
 const createSitePrompt = (now: string) =>
   `You are Hemanth's portfolio AI assistant on his personal portfolio website.

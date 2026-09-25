@@ -28,8 +28,8 @@ const socialItems = [
 
 const quickNav = [
   { label: 'ABOUT', id: 'section2' },
-  { label: 'SKILLS', id: 'section3' },
-  { label: 'PROJECTS', id: 'section4' },
+  { label: 'PROJECTS', id: 'section3' },
+  { label: 'SKILLS', id: 'section4' },
   { label: 'EXPERIENCE', id: 'section5' },
   { label: 'CONTACT', id: 'section8' },
 ]

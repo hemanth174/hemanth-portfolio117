@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, ArrowLeft, Copy, CopyCheck, Maximize2, Minimize2, Moon, Sparkles, Sun } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Copy, CopyCheck, Maximize2, MessageCircle, Minimize2, Moon, Sparkles, Sun, X } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { toggleThemeWithRipple } from '@/lib/themeTransition';
 
 const isValidLiveUrl = (value?: string) => {
     if (!value || !value.trim() || value.trim() === '#') {
@@ -32,9 +33,11 @@ const MIN_ASSISTANT_THINKING_MS = 900;
 export default function PreviewPage({ geminiConfigured }: PreviewPageProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { theme, setTheme } = useTheme();
+    const { theme, resolvedTheme, setTheme } = useTheme();
     const previewContainerRef = useRef<HTMLDivElement>(null);
     const assistantEndRef = useRef<HTMLDivElement>(null);
+    const mobileAssistantEndRef = useRef<HTMLDivElement>(null);
+    const [mobileAiOpen, setMobileAiOpen] = useState(false);
     const url = searchParams.get('url') ?? '';
     const title = searchParams.get('title') ?? 'Project Preview';
     const description = searchParams.get('description') ?? '';
@@ -58,7 +61,8 @@ export default function PreviewPage({ geminiConfigured }: PreviewPageProps) {
     const validUrl = useMemo(() => isValidLiveUrl(url), [url]);
     const codeUrl = searchParams.get('codeUrl') ?? '';
     const fallbackPath = codeUrl ? `/testing?codeUrl=${encodeURIComponent(codeUrl)}` : '/testing';
-    const isDarkTheme = mounted ? theme !== 'light' : true;
+    const activeTheme = resolvedTheme ?? theme;
+    const isDarkTheme = mounted ? activeTheme !== 'light' : true;
 
     const handleCopy = async () => {
         if (!url) {
@@ -193,7 +197,8 @@ export default function PreviewPage({ geminiConfigured }: PreviewPageProps) {
 
     useEffect(() => {
         assistantEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, [assistantMessages]);
+        mobileAssistantEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, [assistantMessages, mobileAiOpen]);
 
     const previewIframeUrl = useMemo(() => {
         if (!mounted) {
@@ -272,12 +277,12 @@ export default function PreviewPage({ geminiConfigured }: PreviewPageProps) {
 
                         <button
                             type="button"
-                            onClick={() => setTheme(isDarkTheme ? 'light' : 'dark')}
+                            onClick={(e) => toggleThemeWithRipple(e, isDarkTheme, setTheme)}
                             aria-label={mounted ? (isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode') : 'Switch theme'}
                             title={mounted ? (isDarkTheme ? 'Switch to Light Mode' : 'Switch to Dark Mode') : 'Switch Theme'}
-                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all ${isDarkTheme ? 'border-white/10 bg-white/5 text-zinc-300 hover:border-yellow-400/50 hover:bg-yellow-400/10 hover:text-yellow-400' : 'border-zinc-200 bg-white text-zinc-600 hover:border-amber-400/50 hover:bg-amber-50 hover:text-amber-600'}`}
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all active:scale-90 ${isDarkTheme ? 'border-white/10 bg-white/5 text-zinc-300 hover:border-yellow-400/50 hover:bg-yellow-400/10 hover:text-yellow-400' : 'border-zinc-200 bg-white text-zinc-600 hover:border-amber-400/50 hover:bg-amber-50 hover:text-amber-600'}`}
                         >
-                            {mounted && (isDarkTheme ? <Sun size={16} /> : <Moon size={16} />)}
+                            {mounted ? (isDarkTheme ? <Sun size={16} /> : <Moon size={16} />) : <Sun size={16} className="opacity-0" />}
                         </button>
 
 
@@ -285,7 +290,7 @@ export default function PreviewPage({ geminiConfigured }: PreviewPageProps) {
                 </div>
             </header>
 
-            <main className={`relative z-10 mx-auto px-4 py-3 md:px-10 ${isFullscreen ? 'max-w-none' : 'max-w-[1600px]'}`}>
+            <main className={`relative z-10 mx-auto px-4 py-3 pb-28 md:px-10 lg:pb-3 ${isFullscreen ? 'max-w-none' : 'max-w-[1600px]'}`}>
                 <div className={`grid gap-8 ${isFullscreen ? 'grid-cols-1' : 'lg:grid-cols-[1fr_380px]'}`}>
                     <div className="flex flex-col space-y-6">
                         {iframeError ? (
@@ -473,6 +478,94 @@ export default function PreviewPage({ geminiConfigured }: PreviewPageProps) {
 
                 </div>
             </main>
+
+            {/* ── Mobile AI: floating button bottom-right + bottom sheet ── */}
+            {!isFullscreen && (
+                <div className="lg:hidden">
+                    <button
+                        type="button"
+                        onClick={() => setMobileAiOpen(true)}
+                        aria-label="Open AI assistant"
+                        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-yellow-400 text-black shadow-[0_10px_36px_rgba(250,204,21,0.5)] transition-transform active:scale-90"
+                    >
+                        <MessageCircle size={22} />
+                    </button>
+
+                    <div
+                        aria-hidden={!mobileAiOpen}
+                        onClick={() => setMobileAiOpen(false)}
+                        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${mobileAiOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+                    />
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="AI assistant"
+                        aria-hidden={!mobileAiOpen}
+                        className={`fixed inset-x-0 bottom-0 z-50 transition-transform duration-300 ease-out ${mobileAiOpen ? 'translate-y-0' : 'pointer-events-none translate-y-full'}`}
+                    >
+                        <div className={`overflow-hidden rounded-t-3xl border-t shadow-2xl ${isDarkTheme ? 'border-white/10 bg-zinc-950' : 'border-zinc-200 bg-white'}`}>
+                            <div className="flex items-center justify-between px-5 pb-2 pt-3">
+                                <div className="flex items-center gap-2.5">
+                                    <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${isDarkTheme ? 'bg-yellow-400/10 text-yellow-400' : 'bg-amber-50 text-amber-600'}`}>
+                                        <Sparkles size={16} />
+                                    </span>
+                                    <span>
+                                        <span className={`block text-sm font-bold ${isDarkTheme ? 'text-white' : 'text-zinc-900'}`}>AI Assistant</span>
+                                        <span className="block text-[10px] uppercase tracking-widest text-zinc-500">Ask about this project</span>
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setMobileAiOpen(false)}
+                                    aria-label="Close AI assistant"
+                                    className={`flex h-9 w-9 items-center justify-center rounded-full border ${isDarkTheme ? 'border-white/10 text-zinc-400' : 'border-zinc-200 text-zinc-600'}`}
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                            <div className={`mx-4 flex h-[52vh] flex-col overflow-hidden rounded-2xl border ${isDarkTheme ? 'border-white/10 bg-black/40' : 'border-zinc-200 bg-zinc-50'}`}>
+                                <div className="flex-1 space-y-4 overflow-y-auto p-4">
+                                    {assistantMessages.map((message, index) => (
+                                        <div key={`m-${message.role}-${index}`} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${message.role === 'user' ? 'rounded-br-md bg-yellow-400 font-semibold text-black' : isDarkTheme ? 'rounded-bl-md border border-white/5 bg-zinc-900 text-zinc-200' : 'rounded-bl-md border border-zinc-200 bg-white text-zinc-700'}`}>
+                                                {message.text}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div ref={mobileAssistantEndRef} />
+                                </div>
+                                <form onSubmit={submitAssistantQuestion} className={`border-t p-4 ${isDarkTheme ? 'border-white/5 bg-zinc-950' : 'border-zinc-200 bg-white'}`}>
+                                    <div className={`flex items-center gap-2 rounded-2xl border px-4 py-2 ${isDarkTheme ? 'border-white/10 bg-zinc-900' : 'border-zinc-200 bg-zinc-50'}`}>
+                                        <textarea
+                                            value={assistantQuestion}
+                                            onChange={(event) => setAssistantQuestion(event.target.value)}
+                                            onKeyDown={(event) => {
+                                                if (event.key === 'Enter' && !event.shiftKey) {
+                                                    event.preventDefault();
+                                                    event.currentTarget.form?.requestSubmit();
+                                                }
+                                            }}
+                                            rows={1}
+                                            placeholder={assistantLocked ? 'Daily limit reached (20/20) — back tomorrow' : 'Ask about this project...'}
+                                            disabled={assistantLocked}
+                                            className={`flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-zinc-500 ${isDarkTheme ? 'text-zinc-100' : 'text-zinc-900'}`}
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={assistantLoading || assistantLocked || !assistantQuestion.trim()}
+                                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-yellow-400 text-black transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                                            aria-label="Send question"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div className="h-5" />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

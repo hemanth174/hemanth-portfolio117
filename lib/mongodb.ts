@@ -20,9 +20,11 @@ export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db
 
   // Asynchronously ensure database indexes exist for performance optimization
   db.collection('projects').createIndex({ createdAt: -1 }).catch(() => {});
+  db.collection('workflows').createIndex({ createdAt: -1 }).catch(() => {});
   db.collection('visitors').createIndex({ visitedAt: -1 }).catch(() => {});
   db.collection('contacts').createIndex({ createdAt: -1 }).catch(() => {});
   db.collection('events').createIndex({ createdAt: -1 }).catch(() => {});
+  db.collection('certificates').createIndex({ createdAt: -1 }).catch(() => {});
 
   cached = { client, db };
   return cached;

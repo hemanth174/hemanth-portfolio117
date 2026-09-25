@@ -103,7 +103,7 @@ export const Skills = () => {
     };
 
     return (
-        <section id="section3" className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white px-6 md:px-10 pt-24 pb-16 font-mono">
+        <section id="section4" className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white px-6 md:px-10 pt-24 pb-16 font-mono">
             <div className="mx-auto max-w-7xl">
                 {/* Section Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-12 border-b border-zinc-200 dark:border-zinc-900 pb-6">

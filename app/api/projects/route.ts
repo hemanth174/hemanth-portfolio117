@@ -109,13 +109,76 @@ function parseStoryFields(body: Record<string, unknown>) {
 }
 
 // GET - Fetch all projects. If database is missing any default projects, insert them.
-export async function GET() {
+// `?summary=1` returns lightweight card fields only (fast list rendering).
+// In-memory cache (30s) avoids a DB round-trip on every request.
+let projectsCache: { at: number; payload: unknown[] } | null = null;
+const PROJECTS_CACHE_TTL_MS = 30_000;
+
+const SUMMARY_PROJECTION = {
+  title: 1,
+  category: 1,
+  projectType: 1,
+  order: 1,
+  description: 1,
+  image: 1,
+  codeUrl: 1,
+  liveUrl: 1,
+  createdAt: 1,
+};
+
+/**
+ * Admin-uploaded images can be multi-MB base64 data URLs. Those must never
+ * ship inside list payloads (or the single-project payload's siblings) —
+ * they are what made the deployed site load projects slowly.
+ * Short URL images (/Img2.png, https://…) are preserved as-is.
+ */
+const isHeavyImage = (value: unknown): value is string =>
+  typeof value === 'string' && value.length > 2000 && value.startsWith('data:');
+
+function stripHeavyImage<T extends Record<string, any>>(doc: T): T {
+  if (doc && isHeavyImage((doc as Record<string, unknown>).image)) {
+    return { ...doc, image: '' };
+  }
+  return doc;
+}
+
+export async function GET(request: NextRequest) {
   try {
+    const summary = request.nextUrl.searchParams.get('summary') === '1';
+    const singleId = request.nextUrl.searchParams.get('id');
+    const now = Date.now();
+
+    if (summary && !singleId && projectsCache && now - projectsCache.at < PROJECTS_CACHE_TTL_MS) {
+      return NextResponse.json(
+        { projects: projectsCache.payload },
+        { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600' } },
+      );
+    }
+
     const { db } = await connectToDatabase();
-    let projects = await db
-      .collection('projects')
-      .find({})
-      .toArray();
+
+    // Single-project fetch for the story page (tiny payload, indexed _id lookup).
+    if (singleId) {
+      let objectId: ObjectId;
+      try {
+        objectId = new ObjectId(singleId);
+      } catch {
+        return NextResponse.json({ error: 'Invalid project ID.' }, { status: 400 });
+      }
+      const project = await db.collection('projects').findOne({ _id: objectId });
+      if (!project) return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
+      return NextResponse.json(
+        { project: stripHeavyImage(project) },
+        { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600' } },
+      );
+    }
+
+    let projects = summary
+      ? await db.collection('projects').find({}).project(SUMMARY_PROJECTION).toArray()
+      : await db
+        .collection('projects')
+        .find({})
+        .toArray();
 
     const defaultProjects = [
       {
@@ -193,7 +256,14 @@ export async function GET() {
 
     if (missingDefaults.length > 0) {
       await db.collection('projects').insertMany(missingDefaults);
-      projects = await db.collection('projects').find({}).toArray();
+      projects = summary
+        ? await db.collection('projects').find({}).project(SUMMARY_PROJECTION).toArray()
+        : await db.collection('projects').find({}).toArray();
+    }
+
+    if (summary) {
+      // Drop base64 monsters before sending — keeps the list payload in KBs.
+      projects = projects.map((p: any) => stripHeavyImage(p));
     }
 
     // Sort projects: 'big' projects first, 'small' projects second, then by order/createdAt descending
@@ -216,6 +286,10 @@ export async function GET() {
       const dateB = new Date(b.createdAt || 0).getTime();
       return dateB - dateA; // Descending by createdAt
     });
+
+    if (summary && projects.length > 0) {
+      projectsCache = { at: now, payload: projects };
+    }
 
     return NextResponse.json(
       { projects },
@@ -283,6 +357,7 @@ export async function POST(request: NextRequest) {
     const result = await db.collection('projects').insertOne(newProject);
     
     // Invalidate Next.js static cache immediately
+    projectsCache = null;
     revalidatePath('/api/projects');
     revalidatePath('/');
 
@@ -322,6 +397,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Invalidate Next.js static cache immediately
+    projectsCache = null;
     revalidatePath('/api/projects');
     revalidatePath('/');
 
@@ -406,6 +482,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Invalidate Next.js static cache immediately
+    projectsCache = null;
     revalidatePath('/api/projects');
     revalidatePath('/');
 

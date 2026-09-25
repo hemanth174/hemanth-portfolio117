@@ -23,10 +23,10 @@ export default function Home() {
       </div>
 
       <div id="section3" className="scroll-mt-20">
-        <Skills />
+        <Projects />
       </div>
       <div id="section4" className="scroll-mt-20">
-        <Projects />
+        <Skills />
       </div>
       <div id="section5" className="scroll-mt-20">
         <WorkExperience />
