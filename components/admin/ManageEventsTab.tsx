@@ -38,6 +38,7 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [mediaMessage, setMediaMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleStartEdit = (ev: TimelineEvent) => {
@@ -92,29 +93,45 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
     const selected = Array.from(files);
     if (!selected.length) return;
     setIsUploadingMedia(true);
+    setMediaMessage('');
+    let uploadedCount = 0;
     try {
       for (const file of selected) {
         if (file.type.startsWith('video/') && file.size > 300 * 1024 * 1024) {
-          window.alert(`${file.name} is larger than the 300 MB video limit.`);
+          setMediaMessage(`${file.name} is larger than the 300 MB video limit.`);
           continue;
         }
         if (file.type.startsWith('image/') && file.size > 15 * 1024 * 1024) {
-          window.alert(`${file.name} is larger than the 15 MB image limit.`);
+          setMediaMessage(`${file.name} is larger than the 15 MB image limit.`);
           continue;
         }
         const body = new FormData();
         body.append('file', file);
         const response = await fetch('/api/events/media', { method: 'POST', body });
-        const data = await response.json();
+        const raw = await response.text();
+        let data: { url?: string; type?: string; error?: string } = {};
+        try {
+          data = JSON.parse(raw) as typeof data;
+        } catch {
+          throw new Error(`Upload failed (${response.status}). The server rejected this file or the upload is too large.`);
+        }
         if (!response.ok) throw new Error(data.error || 'Upload failed');
-        if (data.type === 'video') setVideoUrl(data.url);
+        if (data.type === 'video') {
+          if (!data.url) throw new Error('The server did not return a video URL.');
+          setVideoUrl(data.url);
+          uploadedCount += 1;
+        }
         else {
-          setGallery((current) => current ? `${current}\n${data.url}` : data.url);
-          if (!image) setImage(data.url);
+          if (!data.url) throw new Error('The server did not return an image URL.');
+          const mediaUrl = data.url;
+          setGallery((current) => current ? `${current}\n${mediaUrl}` : mediaUrl);
+          if (!image) setImage(mediaUrl);
+          uploadedCount += 1;
         }
       }
+      if (uploadedCount > 0) setMediaMessage('Media uploaded. Save the event to publish it.');
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'Media upload failed.');
+      setMediaMessage(error instanceof Error ? error.message : 'Media upload failed.');
     } finally {
       setIsUploadingMedia(false);
     }
@@ -222,6 +239,7 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
                 <textarea rows={3} value={outcomes} onChange={(e) => setOutcomes(e.target.value)} placeholder="Outcomes and takeaways (one per line)" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none resize-none" />
                 <div className="grid gap-2 sm:grid-cols-2"><label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 px-3 py-3 text-center font-mono text-[10px] font-bold text-zinc-500 hover:border-yellow-400 dark:border-zinc-700"><Upload size={14} /> ADD PHOTOS<input type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && uploadMedia(e.target.files)} /></label><label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 px-3 py-3 text-center font-mono text-[10px] font-bold text-zinc-500 hover:border-yellow-400 dark:border-zinc-700"><Film size={14} /> ADD VIDEO · MAX 300 MB<input type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files && uploadMedia(e.target.files)} /></label></div>
                 {isUploadingMedia && <p className="font-mono text-[10px] text-yellow-600">UPLOADING MEDIA...</p>}
+                {mediaMessage && <p role="status" className={`font-mono text-[10px] ${mediaMessage.includes('uploaded') ? 'text-emerald-600' : 'text-red-500'}`}>{mediaMessage}</p>}
               </div>
             </div>
 
