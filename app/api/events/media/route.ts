@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
+import { createWriteStream } from 'node:fs';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { verifyAdminRequest } from '@/lib/auth';
@@ -26,10 +29,13 @@ export async function POST(request: NextRequest) {
     const filename = `${randomUUID()}${extension}`;
     const directory = path.join(process.cwd(), 'public', 'uploads', 'events');
     await mkdir(directory, { recursive: true });
-    await writeFile(path.join(directory, filename), Buffer.from(await file.arrayBuffer()));
+    const destination = path.join(directory, filename);
+    if (!file.stream) throw new Error('This server does not support streamed uploads.');
+    await pipeline(Readable.fromWeb(file.stream() as Parameters<typeof Readable.fromWeb>[0]), createWriteStream(destination));
     return NextResponse.json({ url: `/uploads/events/${filename}`, type: isVideo ? 'video' : 'image' });
   } catch (error) {
     console.error('Event media upload error:', error);
-    return NextResponse.json({ error: 'Upload failed. Please try again.' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown upload error';
+    return NextResponse.json({ error: process.env.NODE_ENV === 'development' ? message : 'Upload failed. Please try again.' }, { status: 500 });
   }
 }
