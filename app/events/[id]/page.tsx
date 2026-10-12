@@ -1,0 +1,34 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, ArrowUpRight, Calendar, MapPin, Play, Users } from 'lucide-react'
+
+type Event = {
+  _id?: string; title: string; type: string; date: string; description: string; story?: string; location: string; image?: string; link?: string; videoUrl?: string; gallery?: string[]; team?: string[]; contributions?: string[]; outcomes?: string[]; projectUrl?: string; tags?: string[]
+}
+
+const slug = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+const matches = (event: Event, id: string) => event._id === id || slug(event.title) === decodeURIComponent(id)
+
+export default function EventStoryPage({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter()
+  const [event, setEvent] = useState<Event | null>(null)
+  const [loading, setLoading] = useState(true)
+  useEffect(() => { params.then(({ id }) => fetch('/api/events').then((res) => res.json()).then((data) => setEvent((data.events || []).find((item: Event) => matches(item, id)) || null)).finally(() => setLoading(false))) }, [params])
+  if (loading) return <div className="grid min-h-screen place-items-center bg-zinc-50 font-mono text-xs dark:bg-black">LOADING STORY...</div>
+  if (!event) return <div className="grid min-h-screen place-items-center bg-zinc-50 px-6 text-center dark:bg-black"><div><p className="mb-5 font-mono text-xs text-zinc-500">EVENT NOT FOUND</p><Link href="/events" className="font-bold text-amber-600 underline">Back to events</Link></div></div>
+
+  const gallery = event.gallery?.length ? event.gallery : event.image ? [event.image] : []
+  const sections = [{ title: 'What I worked on', items: event.contributions }, { title: 'What came out of it', items: event.outcomes }]
+  return <main className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-black dark:text-white">
+    <div className="mx-auto max-w-6xl px-5 pb-24 pt-8 sm:px-8 lg:px-12">
+      <div className="flex flex-wrap items-center gap-5"><button type="button" onClick={() => router.back()} className="inline-flex items-center gap-2 font-mono text-xs font-bold tracking-widest text-zinc-500 hover:text-amber-600"><ArrowLeft size={15} /> BACK</button><Link href="/events" className="inline-flex items-center gap-2 font-mono text-xs font-bold tracking-widest text-zinc-500 hover:text-amber-600">ALL EVENTS</Link><Link href="/" className="font-mono text-xs font-bold tracking-widest text-zinc-500 hover:text-amber-600">PORTFOLIO HOME</Link></div>
+      <div className="mt-12 grid gap-12 lg:grid-cols-[1.15fr_.85fr] lg:items-end"><div><p className="mb-5 font-mono text-xs font-bold tracking-[.3em] text-amber-600 dark:text-yellow-300">{event.type === 'college' ? 'CAMPUS EVENT' : 'EXTERNAL EVENT'} / CASE STUDY</p><h1 className="max-w-4xl text-5xl font-black uppercase leading-[.92] tracking-tight sm:text-7xl">{event.title}</h1><p className="mt-7 max-w-2xl text-lg leading-8 text-zinc-500 dark:text-zinc-400">{event.description}</p></div><div className="grid grid-cols-2 gap-3 font-mono text-xs"><div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"><Calendar className="mb-5 text-amber-500" size={18} /><span className="text-zinc-400">WHEN</span><strong className="mt-2 block">{event.date}</strong></div><div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"><MapPin className="mb-5 text-amber-500" size={18} /><span className="text-zinc-400">WHERE</span><strong className="mt-2 block uppercase">{event.location}</strong></div></div></div>
+      {gallery.length > 0 && <div className="mt-14 grid gap-4 sm:grid-cols-2"><div className="overflow-hidden rounded-[2rem] bg-zinc-200 dark:bg-zinc-900 sm:col-span-2"><img src={gallery[0]} alt={`${event.title} highlight`} className="max-h-[620px] w-full object-cover" /></div>{gallery.slice(1).map((image) => <div key={image} className="overflow-hidden rounded-3xl bg-zinc-200 dark:bg-zinc-900"><img src={image} alt="Event memory" className="aspect-[4/3] w-full object-cover" /></div>)}</div>}
+      <div className="mx-auto mt-16 grid max-w-4xl gap-14 lg:grid-cols-[1fr_280px]"><article className="space-y-6 text-base leading-8 text-zinc-600 dark:text-zinc-300"><p className="font-mono text-xs font-bold tracking-[.25em] text-amber-600 dark:text-yellow-300">01 / THE STORY</p><h2 className="text-3xl font-black uppercase text-zinc-900 dark:text-white">From a rough idea to something people could try.</h2><p>{event.story || event.description}</p>{sections.map((section) => section.items?.length ? <section key={section.title} className="pt-7"><h3 className="mb-5 text-xl font-black uppercase text-zinc-900 dark:text-white">{section.title}</h3><ul className="space-y-3">{section.items.map((item) => <li key={item} className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-yellow-300" />{item}</li>)}</ul></section> : null)}</article><aside className="space-y-7"><div className="rounded-3xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"><div className="mb-5 flex items-center gap-2 font-mono text-xs font-bold tracking-widest"><Users size={16} className="text-amber-500" /> THE TEAM</div>{event.team?.length ? <ul className="space-y-3 text-sm text-zinc-500">{event.team.map((member) => <li key={member}>{member}</li>)}</ul> : <p className="text-sm text-zinc-500">A focused team build.</p>}</div>{event.tags?.length ? <div className="flex flex-wrap gap-2">{event.tags.map((tag) => <span key={tag} className="rounded-full border border-zinc-200 px-3 py-1 font-mono text-[10px] font-bold uppercase text-zinc-500 dark:border-zinc-800">{tag}</span>)}</div> : null}</aside></div>
+      {(event.projectUrl || event.videoUrl || event.link) && <div className="mt-16 flex flex-wrap gap-3 border-t border-zinc-200 pt-8 dark:border-zinc-800">{event.projectUrl && <a href={event.projectUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-yellow-300 px-5 py-3 font-mono text-xs font-bold text-black">VIEW THE BUILD <ArrowUpRight size={15} /></a>}{event.videoUrl && <a href={event.videoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-5 py-3 font-mono text-xs font-bold dark:border-zinc-700"><Play size={14} /> WATCH VIDEO</a>}{event.link && <a href={event.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-5 py-3 font-mono text-xs font-bold dark:border-zinc-700">CERTIFICATE <ArrowUpRight size={15} /></a>}</div>}
+    </div>
+  </main>
+}

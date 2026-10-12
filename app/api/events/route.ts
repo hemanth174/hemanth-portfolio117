@@ -16,6 +16,11 @@ function normalizeTitle(title: string): string {
   return (title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+function stringArray(value: unknown, maxItems = 20, maxLength = 300): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => sanitize(item, maxLength)).filter(Boolean).slice(0, maxItems);
+}
+
 const defaultEvents = [
   {
     title: "Breaking into IoT — Robotics & Advanced Tech",
@@ -87,6 +92,11 @@ const defaultEvents = [
     tags: ["Hackathon", "Teamwork", "Prototyping", "NIAT"],
     image: "https://res.cloudinary.com/dqtlqvhw5/image/upload/v1766465957/Base44-Hackthon-HNG83QSUJT_z1svhc.png",
     link: "",
+    projectUrl: "https://shiksha-sahayak-9f94727d.base44.app",
+    gallery: ["https://res.cloudinary.com/dqtlqvhw5/image/upload/v1766465957/Base44-Hackthon-HNG83QSUJT_z1svhc.png"],
+    team: ["Hemanth Rama Sai", "Hackathon teammates"],
+    contributions: ["Scoped the product idea", "Built the core experience in Base44", "Presented the working prototype"],
+    outcomes: ["Shipped a usable education-support prototype", "Learned to make product decisions quickly under pressure"],
     createdAt: new Date(Date.now() - 2000)
   },
   {
@@ -119,6 +129,20 @@ export async function GET() {
       events = await db.collection('events').find({}).sort({ createdAt: -1 }).toArray();
     }
 
+    // Older databases may contain only a few manually-added events. Add any
+    // missing portfolio defaults so the public events page stays complete.
+    const existingTitles = new Set(events.map((event) => normalizeTitle(event.title as string)));
+    const missingDefaults = defaultEvents.filter((event) => {
+      if (normalizeTitle(event.title).includes('base44')) {
+        return !Array.from(existingTitles).some((title) => title.includes('base44'));
+      }
+      return !existingTitles.has(normalizeTitle(event.title));
+    });
+    if (missingDefaults.length > 0) {
+      await db.collection('events').insertMany(missingDefaults);
+      events = await db.collection('events').find({}).sort({ createdAt: -1 }).toArray();
+    }
+
     // Backfill: enrich older events that are missing images/stories from the default pool.
     // Only fills empty fields — never overwrites admin-edited content.
     const defaultMap = new Map<string, Record<string, unknown>>();
@@ -127,13 +151,22 @@ export async function GET() {
     }
     const backfillOps: Promise<unknown>[] = [];
     for (const ev of events) {
-      const def = defaultMap.get(normalizeTitle(ev.title as string));
+      const normalizedEventTitle = normalizeTitle(ev.title as string);
+      const def = normalizedEventTitle.includes('base44')
+        ? defaultMap.get('base44hackathon')
+        : defaultMap.get(normalizedEventTitle);
       if (!def) continue;
       const patch: Record<string, unknown> = {};
+      if (normalizedEventTitle.includes('base44') && ev.title !== def.title) patch.title = def.title;
       if (!ev.image && def.image) patch.image = def.image;
       if (!ev.story && def.story) patch.story = def.story;
       if ((!ev.tags || ev.tags.length === 0) && Array.isArray(def.tags)) patch.tags = def.tags;
       if (!ev.link && def.link) patch.link = def.link;
+      if ((!ev.gallery || ev.gallery.length === 0) && Array.isArray(def.gallery)) patch.gallery = def.gallery;
+      if ((!ev.team || ev.team.length === 0) && Array.isArray(def.team)) patch.team = def.team;
+      if ((!ev.contributions || ev.contributions.length === 0) && Array.isArray(def.contributions)) patch.contributions = def.contributions;
+      if ((!ev.outcomes || ev.outcomes.length === 0) && Array.isArray(def.outcomes)) patch.outcomes = def.outcomes;
+      if (!ev.projectUrl && def.projectUrl) patch.projectUrl = def.projectUrl;
       if (Object.keys(patch).length > 0) {
         backfillOps.push(db.collection('events').updateOne({ _id: ev._id }, { $set: patch }));
       }
@@ -179,6 +212,12 @@ export async function POST(request: NextRequest) {
     const location = sanitize(body.location, 200);
     const link = sanitize(body.link, 500);
     const image = sanitize(body.image, 10 * 1024 * 1024);
+    const videoUrl = sanitize(body.videoUrl, 500);
+    const projectUrl = sanitize(body.projectUrl, 500);
+    const gallery = stringArray(body.gallery, 12, 10 * 1024 * 1024);
+    const team = stringArray(body.team);
+    const contributions = stringArray(body.contributions, 12, 1000);
+    const outcomes = stringArray(body.outcomes, 12, 1000);
 
     // Tags: array of strings
     let tags: string[] = [];
@@ -218,6 +257,12 @@ export async function POST(request: NextRequest) {
       location,
       image,
       link,
+      videoUrl,
+      projectUrl,
+      gallery,
+      team,
+      contributions,
+      outcomes,
       createdAt: new Date(),
     };
 
@@ -298,6 +343,12 @@ export async function PUT(request: NextRequest) {
     const location = sanitize(body.location, 200);
     const link = sanitize(body.link, 500);
     const image = sanitize(body.image, 10 * 1024 * 1024);
+    const videoUrl = sanitize(body.videoUrl, 500);
+    const projectUrl = sanitize(body.projectUrl, 500);
+    const gallery = stringArray(body.gallery, 12, 10 * 1024 * 1024);
+    const team = stringArray(body.team);
+    const contributions = stringArray(body.contributions, 12, 1000);
+    const outcomes = stringArray(body.outcomes, 12, 1000);
 
     // Tags: array of strings
     let tags: string[] = [];
@@ -344,6 +395,12 @@ export async function PUT(request: NextRequest) {
       location,
       image,
       link,
+      videoUrl,
+      projectUrl,
+      gallery,
+      team,
+      contributions,
+      outcomes,
     };
 
     const result = await db.collection('events').updateOne(

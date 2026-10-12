@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { transition } from "../Skills/page"
 import { useTheme } from "next-themes"
+import Link from "next/link"
 import { Sun, Moon, Menu, ChevronDown } from "lucide-react"
 import { GridSnake } from "../GridSnake/page"
 import { toggleThemeWithRipple } from "@/lib/themeTransition"
@@ -35,6 +36,7 @@ export const HomeSection = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [activeSection, setActiveSection] = useState<string>('');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [heroIntro, setHeroIntro] = useState('Turning ideas into working software.');
     const [dragY, setDragY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const dragStartY = useRef(0);
@@ -52,7 +54,7 @@ export const HomeSection = () => {
         { id: 'section4', label: 'SKILLS' },
         { id: 'section5', label: 'EXPERIENCE' },
         { id: 'section6', label: 'CERTIFICATION' },
-        { id: 'section7', label: 'EVENTS' },
+        { id: 'events-page', label: 'EVENTS' },
         { id: 'section8', label: 'CONTACT' },
     ];
 
@@ -65,7 +67,7 @@ export const HomeSection = () => {
                 setIsScrolled(false);
             }
 
-            const sections = ['section2', 'section3', 'section4', 'section5', 'section6', 'section7', 'section8'];
+            const sections = ['section2', 'section3', 'section4', 'section5', 'section6', 'section8'];
             const scrollPosition = window.scrollY + 140;
 
             let currentSection = '';
@@ -202,8 +204,8 @@ export const HomeSection = () => {
                                 return (
                                     <a
                                         key={item.id}
-                                        href={`#${item.id}`}
-                                        onClick={(e) => handleNavClick(e, item.id)}
+                                         href={item.id === 'events-page' ? '/events' : `#${item.id}`}
+                                         onClick={(e) => item.id === 'events-page' ? undefined : handleNavClick(e, item.id)}
                                         className="group relative py-1 px-1 transition-all"
                                     >
                                         <p className={`${transition} relative z-10 tracking-widest transition-all duration-300 ${
@@ -287,7 +289,7 @@ export const HomeSection = () => {
                                 return (
                                     <button
                                         key={item.id}
-                                        onClick={(e) => handleSheetNavClick(e, item.id)}
+                                         onClick={(e) => item.id === 'events-page' ? (window.location.href = '/events') : handleSheetNavClick(e, item.id)}
                                         className={`flex cursor-pointer items-center gap-4 rounded-2xl px-4 py-3.5 text-left transition-colors active:scale-[0.99] ${
                                             isActive
                                                 ? 'bg-yellow-400/15 dark:bg-yellow-300/10 text-amber-600 dark:text-yellow-300'
@@ -347,7 +349,12 @@ export const HomeSection = () => {
                     <p className="text-sm md:text-2xl tracking-widest text-amber-600 dark:text-yellow-400 font-mono z-10"><span className="tracking-widest">B.Sc.</span> UNDERGRADUATE · UPSKILLING AT NIAT</p>
                     <h1 className="text-5xl sm:text-6xl md:text-8xl font-bold text-zinc-900 dark:text-white font-mono tracking-tight overflow-hidden z-10">HEMANTH</h1>
                     <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-zinc-400 dark:text-gray-600 leading-tight z-10">SOLVING PROBLEMS.</h1>
-                    <p className="text-zinc-500 dark:text-gray-500 w-full md:w-100 font-mono text-sm md:text-base z-10">Turning ideas into working software.</p>
+                    <input
+                        aria-label="Edit portfolio intro"
+                        value={heroIntro}
+                        onChange={(event) => setHeroIntro(event.target.value)}
+                        className="w-full border-b border-zinc-300 bg-transparent pb-2 text-sm font-mono text-zinc-500 outline-none transition-colors placeholder:text-zinc-400 focus:border-yellow-400 dark:border-zinc-800 dark:text-gray-500 dark:focus:border-yellow-300 md:w-[28rem] md:text-base"
+                    />
 
                     {/* Tech chips */}
                     <div className="z-10 flex flex-wrap gap-2 font-mono">
@@ -361,24 +368,32 @@ export const HomeSection = () => {
                         ))}
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-4 md:gap-10 font-mono w-full sm:w-auto mt-4 z-10">
-                        <button 
-                            onClick={() => {
-                                document.getElementById('section3')?.scrollIntoView({ behavior: 'smooth' });
-                            }} 
-                            className="p-3 px-6 bg-yellow-400 dark:bg-yellow-300 text-black hover:bg-yellow-500 dark:hover:bg-yellow-400 transition-colors cursor-pointer w-full sm:w-auto font-bold tracking-wider shadow-md"
-                        >
-                            VIEW WORK
-                        </button>
-                        <button 
-                            onClick={() => {
-                                document.getElementById('section8')?.scrollIntoView({ behavior: 'smooth' });
-                            }} 
-                            className="p-3 px-6 border border-zinc-300 dark:border-zinc-800 text-zinc-500 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-500 dark:hover:border-white transition-colors w-full sm:w-auto tracking-wider cursor-pointer font-bold"
-                        >
-                            CONTACT
-                        </button>
-                    </div>
+                     <div className="z-10 mt-4 flex w-full flex-col gap-4 font-mono sm:w-auto">
+                         <div className="flex w-full flex-col gap-4 sm:flex-row md:gap-10">
+                             <button 
+                                 onClick={() => {
+                                     document.getElementById('section3')?.scrollIntoView({ behavior: 'smooth' });
+                                 }} 
+                                 className="w-full cursor-pointer bg-yellow-400 p-3 px-6 font-bold tracking-wider text-black shadow-md transition-colors hover:bg-yellow-500 dark:bg-yellow-300 dark:hover:bg-yellow-400 sm:w-auto"
+                             >
+                                 VIEW WORK
+                             </button>
+                             <button 
+                                 onClick={() => {
+                                     document.getElementById('section8')?.scrollIntoView({ behavior: 'smooth' });
+                                 }} 
+                                 className="w-full cursor-pointer border border-zinc-300 p-3 px-6 font-bold tracking-wider text-zinc-500 transition-colors hover:border-zinc-500 hover:text-zinc-900 dark:border-zinc-800 dark:text-gray-400 dark:hover:border-white dark:hover:text-white sm:w-auto"
+                             >
+                                 CONTACT
+                             </button>
+                         </div>
+                         <Link
+                             href="/events"
+                             className="w-full border border-yellow-400/70 p-3 px-6 text-center font-bold tracking-wider text-amber-700 transition-colors hover:bg-yellow-300 hover:text-black dark:text-yellow-300 sm:w-auto"
+                         >
+                             EVENT STORIES
+                         </Link>
+                     </div>
 
                     {/* Scroll cue */}
                     <button

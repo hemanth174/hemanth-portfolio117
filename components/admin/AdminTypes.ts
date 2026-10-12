@@ -156,6 +156,12 @@ export interface TimelineEvent {
   location: string;
   image?: string;
   link?: string;
+  videoUrl?: string;
+  gallery?: string[];
+  team?: string[];
+  contributions?: string[];
+  outcomes?: string[];
+  projectUrl?: string;
   createdAt?: string;
 }
 

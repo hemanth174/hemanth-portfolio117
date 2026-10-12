@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef } from 'react';
-import { Plus, Edit2, Trash2, Calendar, MapPin, Upload, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar, MapPin, Upload, RefreshCw, Film } from 'lucide-react';
 import { TimelineEvent } from './AdminTypes';
 
 interface ManageEventsTabProps {
@@ -28,9 +28,16 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
   const [tags, setTags] = useState('');
   const [image, setImage] = useState('');
   const [link, setLink] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [projectUrl, setProjectUrl] = useState('');
+  const [gallery, setGallery] = useState('');
+  const [team, setTeam] = useState('');
+  const [contributions, setContributions] = useState('');
+  const [outcomes, setOutcomes] = useState('');
   const [imageMode, setImageMode] = useState<'upload' | 'url'>('upload');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleStartEdit = (ev: TimelineEvent) => {
@@ -44,6 +51,12 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
     setTags(Array.isArray(ev.tags) ? ev.tags.join(', ') : typeof ev.tags === 'string' ? ev.tags : '');
     setImage(ev.image || '');
     setLink(ev.link || '');
+    setVideoUrl(ev.videoUrl || '');
+    setProjectUrl(ev.projectUrl || '');
+    setGallery(Array.isArray(ev.gallery) ? ev.gallery.join('\n') : '');
+    setTeam(Array.isArray(ev.team) ? ev.team.join('\n') : '');
+    setContributions(Array.isArray(ev.contributions) ? ev.contributions.join('\n') : '');
+    setOutcomes(Array.isArray(ev.outcomes) ? ev.outcomes.join('\n') : '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -58,6 +71,12 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
     setTags('');
     setImage('');
     setLink('');
+    setVideoUrl('');
+    setProjectUrl('');
+    setGallery('');
+    setTeam('');
+    setContributions('');
+    setOutcomes('');
   };
 
   const handleFile = (file: File) => {
@@ -67,6 +86,38 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
       setImage(reader.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  const uploadMedia = async (files: FileList | File[]) => {
+    const selected = Array.from(files);
+    if (!selected.length) return;
+    setIsUploadingMedia(true);
+    try {
+      for (const file of selected) {
+        if (file.type.startsWith('video/') && file.size > 300 * 1024 * 1024) {
+          window.alert(`${file.name} is larger than the 300 MB video limit.`);
+          continue;
+        }
+        if (file.type.startsWith('image/') && file.size > 15 * 1024 * 1024) {
+          window.alert(`${file.name} is larger than the 15 MB image limit.`);
+          continue;
+        }
+        const body = new FormData();
+        body.append('file', file);
+        const response = await fetch('/api/events/media', { method: 'POST', body });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Upload failed');
+        if (data.type === 'video') setVideoUrl(data.url);
+        else {
+          setGallery((current) => current ? `${current}\n${data.url}` : data.url);
+          if (!image) setImage(data.url);
+        }
+      }
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Media upload failed.');
+    } finally {
+      setIsUploadingMedia(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,6 +138,12 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
           tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
           image,
           link: link.trim(),
+          videoUrl: videoUrl.trim(),
+          projectUrl: projectUrl.trim(),
+          gallery: gallery.split('\n').map((value) => value.trim()).filter(Boolean),
+          team: team.split('\n').map((value) => value.trim()).filter(Boolean),
+          contributions: contributions.split('\n').map((value) => value.trim()).filter(Boolean),
+          outcomes: outcomes.split('\n').map((value) => value.trim()).filter(Boolean),
         },
         !!editingEvent
       );
@@ -149,6 +206,23 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
                 placeholder="e.g. Breaking into IoT Workshop"
                 className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-yellow-400"
               />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div><label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">Build / Project URL</label><input type="url" value={projectUrl} onChange={(e) => setProjectUrl(e.target.value)} placeholder="https://shiksha-sahayak..." className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none" /></div>
+              <div><label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">Video URL</label><input type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="YouTube, Drive, or MP4 URL" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none" /></div>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+              <p className="mb-3 font-mono text-[10px] font-bold tracking-widest text-amber-600 dark:text-yellow-300">STORY PAGE CONTENT · ONE ITEM PER LINE</p>
+              <div className="space-y-3">
+                <textarea rows={2} value={gallery} onChange={(e) => setGallery(e.target.value)} placeholder="Gallery image URLs (one per line)" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none resize-none" />
+                <textarea rows={2} value={team} onChange={(e) => setTeam(e.target.value)} placeholder="Teammates / collaborators (one per line)" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none resize-none" />
+                <textarea rows={3} value={contributions} onChange={(e) => setContributions(e.target.value)} placeholder="What I did (one contribution per line)" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none resize-none" />
+                <textarea rows={3} value={outcomes} onChange={(e) => setOutcomes(e.target.value)} placeholder="Outcomes and takeaways (one per line)" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none resize-none" />
+                <div className="grid gap-2 sm:grid-cols-2"><label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 px-3 py-3 text-center font-mono text-[10px] font-bold text-zinc-500 hover:border-yellow-400 dark:border-zinc-700"><Upload size={14} /> ADD PHOTOS<input type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && uploadMedia(e.target.files)} /></label><label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 px-3 py-3 text-center font-mono text-[10px] font-bold text-zinc-500 hover:border-yellow-400 dark:border-zinc-700"><Film size={14} /> ADD VIDEO · MAX 300 MB<input type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files && uploadMedia(e.target.files)} /></label></div>
+                {isUploadingMedia && <p className="font-mono text-[10px] text-yellow-600">UPLOADING MEDIA...</p>}
+              </div>
             </div>
 
             <div>

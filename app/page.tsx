@@ -4,7 +4,6 @@ import { Projects } from "@/components/Projects/page";
 import { Skills } from "@/components/Skills/page";
 import { WorkExperience } from "@/components/WorkExperience/page";
 import { Experience } from "@/components/Experience/page";
-import { Events } from "@/components/Events/page";
 import { Contact } from "@/components/Contact/page";
 import { Footer } from "@/components/Footer/page";
 import { SiteChatbot } from "@/components/SiteChatbot/page";
@@ -33,9 +32,6 @@ export default function Home() {
       </div>
       <div id="section6" className="scroll-mt-20">
         <Experience />
-      </div>
-      <div id="section7" className="scroll-mt-20">
-        <Events />
       </div>
       <div id="section8" className="scroll-mt-20">
         <Contact />
