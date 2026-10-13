@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef } from 'react';
-import { Plus, Edit2, Trash2, Calendar, MapPin, Upload, RefreshCw, Film } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar, MapPin, Upload, RefreshCw, Film, X } from 'lucide-react';
 import { TimelineEvent } from './AdminTypes';
 
 interface ManageEventsTabProps {
@@ -10,6 +10,8 @@ interface ManageEventsTabProps {
   onSave: (event: Partial<TimelineEvent>, isEdit: boolean) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
+
+type PendingMedia = { file: File; previewUrl: string };
 
 export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
   events,
@@ -29,6 +31,7 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
   const [image, setImage] = useState('');
   const [link, setLink] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [storedVideoUrl, setStoredVideoUrl] = useState('');
   const [projectUrl, setProjectUrl] = useState('');
   const [gallery, setGallery] = useState('');
   const [team, setTeam] = useState('');
@@ -39,7 +42,7 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [mediaMessage, setMediaMessage] = useState('');
-  const [pendingMedia, setPendingMedia] = useState<File[]>([]);
+  const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleStartEdit = (ev: TimelineEvent) => {
@@ -53,7 +56,9 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
     setTags(Array.isArray(ev.tags) ? ev.tags.join(', ') : typeof ev.tags === 'string' ? ev.tags : '');
     setImage(ev.image || '');
     setLink(ev.link || '');
-    setVideoUrl(ev.videoUrl || '');
+    const isBlobVideo = Boolean(ev.videoUrl && ev.videoUrl.includes('blob.vercel-storage.com'));
+    setVideoUrl(isBlobVideo ? '' : (ev.videoUrl || ''));
+    setStoredVideoUrl(isBlobVideo ? (ev.videoUrl || '') : '');
     setProjectUrl(ev.projectUrl || '');
     setGallery(Array.isArray(ev.gallery) ? ev.gallery.join('\n') : '');
     setTeam(Array.isArray(ev.team) ? ev.team.join('\n') : '');
@@ -74,6 +79,7 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
     setImage('');
     setLink('');
     setVideoUrl('');
+    setStoredVideoUrl('');
     setProjectUrl('');
     setGallery('');
     setTeam('');
@@ -108,7 +114,7 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
       return true;
     });
     if (valid.length) {
-      setPendingMedia((current) => [...current, ...valid]);
+      setPendingMedia((current) => [...current, ...valid.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))]);
       setMediaMessage(`${valid.length} file${valid.length === 1 ? '' : 's'} queued. Save the event to upload.`);
     }
   };
@@ -137,9 +143,9 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
     try {
       setIsUploadingMedia(pendingMedia.length > 0);
       const uploadedGallery = gallery.split('\n').map((value) => value.trim()).filter(Boolean);
-      let uploadedVideoUrl = videoUrl.trim();
-      for (const file of pendingMedia) {
-        const media = await uploadFile(file);
+      let uploadedVideoUrl = videoUrl.trim() || storedVideoUrl;
+      for (const pending of pendingMedia) {
+        const media = await uploadFile(pending.file);
         if (media.type === 'video') uploadedVideoUrl = media.url as string;
         else uploadedGallery.push(media.url as string);
       }
@@ -234,10 +240,10 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
             <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
               <p className="mb-3 font-mono text-[10px] font-bold tracking-widest text-amber-600 dark:text-yellow-300">STORY PAGE CONTENT · ONE ITEM PER LINE</p>
               <div className="space-y-3">
-                <textarea rows={2} value={gallery} onChange={(e) => setGallery(e.target.value)} placeholder="Gallery image URLs (one per line)" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none resize-none" />
                 <textarea rows={2} value={team} onChange={(e) => setTeam(e.target.value)} placeholder="Teammates / collaborators (one per line)" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none resize-none" />
                 <textarea rows={3} value={contributions} onChange={(e) => setContributions(e.target.value)} placeholder="What I did (one contribution per line)" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none resize-none" />
                 <textarea rows={3} value={outcomes} onChange={(e) => setOutcomes(e.target.value)} placeholder="Outcomes and takeaways (one per line)" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none resize-none" />
+                {(pendingMedia.length > 0 || gallery) && <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{gallery.split('\n').filter(Boolean).map((url) => <div key={url} className="relative overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700"><img src={url} alt="Saved event media" className="aspect-video w-full object-cover" /></div>)}{pendingMedia.map((pending, index) => <div key={`${pending.file.name}-${index}`} className="relative overflow-hidden rounded-xl border border-yellow-400/60 bg-zinc-100 dark:bg-zinc-900">{pending.file.type.startsWith('video/') ? <video src={pending.previewUrl} controls className="aspect-video w-full object-cover" /> : <img src={pending.previewUrl} alt={pending.file.name} className="aspect-video w-full object-cover" />}<button type="button" onClick={() => setPendingMedia((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white" aria-label={`Remove ${pending.file.name}`}><X size={12} /></button><span className="absolute bottom-1 left-1 max-w-[90%] truncate rounded bg-black/70 px-1.5 py-0.5 font-mono text-[9px] text-white">{pending.file.name}</span></div>)}</div>}
                 <div className="grid gap-2 sm:grid-cols-2"><label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 px-3 py-3 text-center font-mono text-[10px] font-bold text-zinc-500 hover:border-yellow-400 dark:border-zinc-700"><Upload size={14} /> ADD PHOTOS<input type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && uploadMedia(e.target.files)} /></label><label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 px-3 py-3 text-center font-mono text-[10px] font-bold text-zinc-500 hover:border-yellow-400 dark:border-zinc-700"><Film size={14} /> ADD VIDEO · MAX 300 MB<input type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files && uploadMedia(e.target.files)} /></label></div>
                 {isUploadingMedia && <p className="font-mono text-[10px] text-yellow-600">UPLOADING MEDIA...</p>}
                 {mediaMessage && <p role="status" className={`font-mono text-[10px] ${mediaMessage.includes('uploaded') ? 'text-emerald-600' : 'text-red-500'}`}>{mediaMessage}</p>}
