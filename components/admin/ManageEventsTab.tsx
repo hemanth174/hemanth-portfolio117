@@ -39,6 +39,7 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [mediaMessage, setMediaMessage] = useState('');
+  const [pendingMedia, setPendingMedia] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleStartEdit = (ev: TimelineEvent) => {
@@ -78,6 +79,8 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
     setTeam('');
     setContributions('');
     setOutcomes('');
+    setPendingMedia([]);
+    setMediaMessage('');
   };
 
   const handleFile = (file: File) => {
@@ -89,52 +92,41 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const uploadMedia = async (files: FileList | File[]) => {
+  const uploadMedia = (files: FileList | File[]) => {
     const selected = Array.from(files);
     if (!selected.length) return;
-    setIsUploadingMedia(true);
     setMediaMessage('');
-    let uploadedCount = 0;
-    try {
-      for (const file of selected) {
-        if (file.type.startsWith('video/') && file.size > 300 * 1024 * 1024) {
-          setMediaMessage(`${file.name} is larger than the 300 MB video limit.`);
-          continue;
-        }
-        if (file.type.startsWith('image/') && file.size > 15 * 1024 * 1024) {
-          setMediaMessage(`${file.name} is larger than the 15 MB image limit.`);
-          continue;
-        }
-        const body = new FormData();
-        body.append('file', file);
-        const response = await fetch('/api/events/media', { method: 'POST', body });
-        const raw = await response.text();
-        let data: { url?: string; type?: string; error?: string } = {};
-        try {
-          data = JSON.parse(raw) as typeof data;
-        } catch {
-          throw new Error(`Upload failed (${response.status}). The server rejected this file or the upload is too large.`);
-        }
-        if (!response.ok) throw new Error(data.error || 'Upload failed');
-        if (data.type === 'video') {
-          if (!data.url) throw new Error('The server did not return a video URL.');
-          setVideoUrl(data.url);
-          uploadedCount += 1;
-        }
-        else {
-          if (!data.url) throw new Error('The server did not return an image URL.');
-          const mediaUrl = data.url;
-          setGallery((current) => current ? `${current}\n${mediaUrl}` : mediaUrl);
-          if (!image) setImage(mediaUrl);
-          uploadedCount += 1;
-        }
+    const valid = selected.filter((file) => {
+      if (file.type.startsWith('video/') && file.size > 300 * 1024 * 1024) {
+        setMediaMessage(`${file.name} is larger than the 300 MB video limit.`);
+        return false;
       }
-      if (uploadedCount > 0) setMediaMessage('Media uploaded. Save the event to publish it.');
-    } catch (error) {
-      setMediaMessage(error instanceof Error ? error.message : 'Media upload failed.');
-    } finally {
-      setIsUploadingMedia(false);
+      if (file.type.startsWith('image/') && file.size > 15 * 1024 * 1024) {
+        setMediaMessage(`${file.name} is larger than the 15 MB image limit.`);
+        return false;
+      }
+      return true;
+    });
+    if (valid.length) {
+      setPendingMedia((current) => [...current, ...valid]);
+      setMediaMessage(`${valid.length} file${valid.length === 1 ? '' : 's'} queued. Save the event to upload.`);
     }
+  };
+
+  const uploadFile = async (file: File) => {
+    const body = new FormData();
+    body.append('file', file);
+    const response = await fetch('/api/events/media', { method: 'POST', body });
+    const raw = await response.text();
+    let data: { url?: string; type?: string; error?: string } = {};
+    try {
+      data = JSON.parse(raw) as typeof data;
+    } catch {
+      throw new Error(`Upload failed (${response.status}). The server rejected this file or the upload is too large.`);
+    }
+    if (!response.ok) throw new Error(data.error || 'Upload failed');
+    if (!data.url || !data.type) throw new Error('The server did not return a media URL.');
+    return data;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,6 +135,14 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
 
     setIsSubmitting(true);
     try {
+      setIsUploadingMedia(pendingMedia.length > 0);
+      const uploadedGallery = gallery.split('\n').map((value) => value.trim()).filter(Boolean);
+      let uploadedVideoUrl = videoUrl.trim();
+      for (const file of pendingMedia) {
+        const media = await uploadFile(file);
+        if (media.type === 'video') uploadedVideoUrl = media.url as string;
+        else uploadedGallery.push(media.url as string);
+      }
       await onSave(
         {
           _id: editingEvent?._id,
@@ -155,9 +155,9 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
           tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
           image,
           link: link.trim(),
-          videoUrl: videoUrl.trim(),
+          videoUrl: uploadedVideoUrl,
           projectUrl: projectUrl.trim(),
-          gallery: gallery.split('\n').map((value) => value.trim()).filter(Boolean),
+          gallery: uploadedGallery,
           team: team.split('\n').map((value) => value.trim()).filter(Boolean),
           contributions: contributions.split('\n').map((value) => value.trim()).filter(Boolean),
           outcomes: outcomes.split('\n').map((value) => value.trim()).filter(Boolean),
@@ -167,6 +167,7 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
       handleCancelEdit();
     } finally {
       setIsSubmitting(false);
+      setIsUploadingMedia(false);
     }
   };
 
