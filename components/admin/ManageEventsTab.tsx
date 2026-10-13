@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useRef } from 'react';
+import { upload } from '@vercel/blob/client';
 import { Plus, Edit2, Trash2, Calendar, MapPin, Upload, RefreshCw, Film, X } from 'lucide-react';
 import { TimelineEvent } from './AdminTypes';
 
@@ -120,19 +121,11 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
   };
 
   const uploadFile = async (file: File) => {
-    const body = new FormData();
-    body.append('file', file);
-    const response = await fetch('/api/events/media', { method: 'POST', body });
-    const raw = await response.text();
-    let data: { url?: string; type?: string; error?: string } = {};
-    try {
-      data = JSON.parse(raw) as typeof data;
-    } catch {
-      throw new Error(`Upload failed (${response.status}). The server rejected this file or the upload is too large.`);
-    }
-    if (!response.ok) throw new Error(data.error || 'Upload failed');
-    if (!data.url || !data.type) throw new Error('The server did not return a media URL.');
-    return data;
+    const blob = await upload(`events/${file.name}`, file, {
+      access: 'public',
+      handleUploadUrl: '/api/events/media/client',
+    });
+    return { url: blob.url, type: file.type.startsWith('video/') ? 'video' : 'image' };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
