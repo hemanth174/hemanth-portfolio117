@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { upload } from '@vercel/blob/client';
 import { Plus, Edit2, Trash2, Calendar, MapPin, Upload, RefreshCw, Film, X } from 'lucide-react';
-import { TimelineEvent } from './AdminTypes';
+import { SocialLink, SocialPlatform, TimelineEvent } from './AdminTypes';
 
 interface ManageEventsTabProps {
   events: TimelineEvent[];
@@ -13,6 +13,16 @@ interface ManageEventsTabProps {
 }
 
 type PendingMedia = { file: File; previewUrl: string };
+
+const socialPlatformOptions: { value: SocialPlatform; label: string; placeholder: string }[] = [
+  { value: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/... or an Instagram video URL' },
+  { value: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/watch?v=...' },
+  { value: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/...' },
+  { value: 'linkedin', label: 'LinkedIn', placeholder: 'https://linkedin.com/posts/...' },
+  { value: 'x', label: 'X / Twitter', placeholder: 'https://x.com/...' },
+  { value: 'threads', label: 'Threads', placeholder: 'https://threads.net/@...' },
+  { value: 'whatsapp', label: 'WhatsApp', placeholder: 'https://wa.me/...' },
+];
 
 export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
   events,
@@ -38,6 +48,8 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
   const [team, setTeam] = useState('');
   const [contributions, setContributions] = useState('');
   const [outcomes, setOutcomes] = useState('');
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+  const [socialPlatform, setSocialPlatform] = useState<SocialPlatform>('instagram');
   const [imageMode, setImageMode] = useState<'upload' | 'url'>('upload');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -65,6 +77,7 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
     setTeam(Array.isArray(ev.team) ? ev.team.join('\n') : '');
     setContributions(Array.isArray(ev.contributions) ? ev.contributions.join('\n') : '');
     setOutcomes(Array.isArray(ev.outcomes) ? ev.outcomes.join('\n') : '');
+    setSocialLinks(Array.isArray(ev.socialLinks) ? ev.socialLinks : []);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -86,6 +99,8 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
     setTeam('');
     setContributions('');
     setOutcomes('');
+    setSocialLinks([]);
+    setSocialPlatform('instagram');
     setPendingMedia([]);
     setMediaMessage('');
   };
@@ -159,7 +174,8 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
           gallery: uploadedGallery,
           team: team.split('\n').map((value) => value.trim()).filter(Boolean),
           contributions: contributions.split('\n').map((value) => value.trim()).filter(Boolean),
-          outcomes: outcomes.split('\n').map((value) => value.trim()).filter(Boolean),
+           outcomes: outcomes.split('\n').map((value) => value.trim()).filter(Boolean),
+           socialLinks: socialLinks.filter((item) => item.url.trim()).map((item) => ({ ...item, url: item.url.trim() })),
         },
         !!editingEvent
       );
@@ -225,6 +241,32 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
               />
             </div>
 
+            <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+              <div className="mb-1.5 flex items-center justify-between gap-3">
+                <label className="font-mono text-[11px] font-bold text-zinc-600 dark:text-zinc-400">Social links for this event</label>
+                <span className="font-mono text-[10px] text-zinc-400">Optional</span>
+              </div>
+              <p className="mb-3 text-[11px] leading-relaxed text-zinc-500">Add Instagram videos or links from more than one platform. Only links you fill in will appear on the event page.</p>
+              <div className="space-y-2">
+                {socialLinks.map((socialLink, index) => {
+                  const option = socialPlatformOptions.find((item) => item.value === socialLink.platform);
+                  return (
+                    <div key={`${socialLink.platform}-${index}`} className="flex items-center gap-2">
+                      <span className="w-24 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 py-2 font-mono text-[10px] font-bold text-zinc-600 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300">{option?.label || socialLink.platform}</span>
+                      <input type="url" value={socialLink.url} onChange={(e) => setSocialLinks((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, url: e.target.value } : item))} placeholder={option?.placeholder} className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 outline-none focus:border-yellow-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white" />
+                      <button type="button" onClick={() => setSocialLinks((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="rounded-lg p-2 text-zinc-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30" aria-label={`Remove ${option?.label || socialLink.platform} link`}><X size={14} /></button>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <select value={socialPlatform} onChange={(e) => setSocialPlatform(e.target.value as SocialPlatform)} className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 outline-none dark:border-zinc-800 dark:bg-zinc-950 dark:text-white">
+                  {socialPlatformOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+                <button type="button" onClick={() => setSocialLinks((current) => [...current, { platform: socialPlatform, url: '' }])} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-2 font-mono text-[10px] font-bold text-black hover:bg-yellow-300"><Plus size={13} /> ADD LINK</button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div><label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">Build / Project URL</label><input type="url" value={projectUrl} onChange={(e) => setProjectUrl(e.target.value)} placeholder="https://shiksha-sahayak..." className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none" /></div>
               <div><label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">Video URL</label><input type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="YouTube, Drive, or MP4 URL" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none" /></div>
@@ -236,7 +278,7 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
                 <textarea rows={2} value={team} onChange={(e) => setTeam(e.target.value)} placeholder="Teammates / collaborators (one per line)" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none resize-none" />
                 <textarea rows={3} value={contributions} onChange={(e) => setContributions(e.target.value)} placeholder="What I did (one contribution per line)" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none resize-none" />
                 <textarea rows={3} value={outcomes} onChange={(e) => setOutcomes(e.target.value)} placeholder="Outcomes and takeaways (one per line)" className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none resize-none" />
-                {(pendingMedia.length > 0 || gallery) && <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{gallery.split('\n').filter(Boolean).map((url) => <div key={url} className="relative overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700"><img src={url} alt="Saved event media" className="aspect-video w-full object-cover" /></div>)}{pendingMedia.map((pending, index) => <div key={`${pending.file.name}-${index}`} className="relative overflow-hidden rounded-xl border border-yellow-400/60 bg-zinc-100 dark:bg-zinc-900">{pending.file.type.startsWith('video/') ? <video src={pending.previewUrl} controls className="aspect-video w-full object-cover" /> : <img src={pending.previewUrl} alt={pending.file.name} className="aspect-video w-full object-cover" />}<button type="button" onClick={() => setPendingMedia((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white" aria-label={`Remove ${pending.file.name}`}><X size={12} /></button><span className="absolute bottom-1 left-1 max-w-[90%] truncate rounded bg-black/70 px-1.5 py-0.5 font-mono text-[9px] text-white">{pending.file.name}</span></div>)}</div>}
+                 {(pendingMedia.length > 0 || gallery) && <div className="grid grid-cols-2 items-start gap-2 sm:grid-cols-3">{gallery.split('\n').filter(Boolean).map((url) => <div key={url} className="relative overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900"><img src={url} alt="Saved event media" className="mx-auto block max-h-32 w-full object-contain" /></div>)}{pendingMedia.map((pending, index) => <div key={`${pending.file.name}-${index}`} className="relative overflow-hidden rounded-xl border border-yellow-400/60 bg-zinc-100 dark:bg-zinc-900">{pending.file.type.startsWith('video/') ? <video src={pending.previewUrl} controls className="mx-auto block max-h-32 w-full object-contain" /> : <img src={pending.previewUrl} alt={pending.file.name} className="mx-auto block max-h-32 w-full object-contain" />}<button type="button" onClick={() => setPendingMedia((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white" aria-label={`Remove ${pending.file.name}`}><X size={12} /></button><span className="absolute bottom-1 left-1 max-w-[90%] truncate rounded bg-black/70 px-1.5 py-0.5 font-mono text-[9px] text-white">{pending.file.name}</span></div>)}</div>}
                 <div className="grid gap-2 sm:grid-cols-2"><label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 px-3 py-3 text-center font-mono text-[10px] font-bold text-zinc-500 hover:border-yellow-400 dark:border-zinc-700"><Upload size={14} /> ADD PHOTOS<input type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && uploadMedia(e.target.files)} /></label><label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 px-3 py-3 text-center font-mono text-[10px] font-bold text-zinc-500 hover:border-yellow-400 dark:border-zinc-700"><Film size={14} /> ADD VIDEO · MAX 300 MB<input type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files && uploadMedia(e.target.files)} /></label></div>
                 {isUploadingMedia && <p className="font-mono text-[10px] text-yellow-600">UPLOADING MEDIA...</p>}
                 {mediaMessage && <p role="status" className={`font-mono text-[10px] ${mediaMessage.includes('uploaded') ? 'text-emerald-600' : 'text-red-500'}`}>{mediaMessage}</p>}

@@ -21,6 +21,27 @@ function stringArray(value: unknown, maxItems = 20, maxLength = 300): string[] {
   return value.map((item) => sanitize(item, maxLength)).filter(Boolean).slice(0, maxItems);
 }
 
+const socialPlatforms = new Set(['instagram', 'youtube', 'facebook', 'linkedin', 'x', 'threads', 'whatsapp']);
+
+function socialLinks(value: unknown): { platform: string; url: string }[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is { platform?: unknown; url?: unknown } => Boolean(item && typeof item === 'object'))
+    .map((item) => ({
+      platform: sanitize(item.platform, 30).toLowerCase(),
+      url: sanitize(item.url, 1000),
+    }))
+    .filter((item) => {
+      if (!socialPlatforms.has(item.platform) || !item.url) return false;
+      try {
+        return ['http:', 'https:'].includes(new URL(item.url).protocol);
+      } catch {
+        return false;
+      }
+    })
+    .slice(0, 12);
+}
+
 const defaultEvents = [
   {
     title: "Breaking into IoT — Robotics & Advanced Tech",
@@ -218,6 +239,7 @@ export async function POST(request: NextRequest) {
     const team = stringArray(body.team);
     const contributions = stringArray(body.contributions, 12, 1000);
     const outcomes = stringArray(body.outcomes, 12, 1000);
+    const eventSocialLinks = socialLinks(body.socialLinks);
 
     // Tags: array of strings
     let tags: string[] = [];
@@ -263,6 +285,7 @@ export async function POST(request: NextRequest) {
       team,
       contributions,
       outcomes,
+      socialLinks: eventSocialLinks,
       createdAt: new Date(),
     };
 
@@ -349,6 +372,7 @@ export async function PUT(request: NextRequest) {
     const team = stringArray(body.team);
     const contributions = stringArray(body.contributions, 12, 1000);
     const outcomes = stringArray(body.outcomes, 12, 1000);
+    const eventSocialLinks = socialLinks(body.socialLinks);
 
     // Tags: array of strings
     let tags: string[] = [];
@@ -401,6 +425,7 @@ export async function PUT(request: NextRequest) {
       team,
       contributions,
       outcomes,
+      socialLinks: eventSocialLinks,
     };
 
     const result = await db.collection('events').updateOne(

@@ -162,7 +162,15 @@ export interface TimelineEvent {
   contributions?: string[];
   outcomes?: string[];
   projectUrl?: string;
+  socialLinks?: SocialLink[];
   createdAt?: string;
+}
+
+export type SocialPlatform = 'instagram' | 'youtube' | 'facebook' | 'linkedin' | 'x' | 'threads' | 'whatsapp';
+
+export interface SocialLink {
+  platform: SocialPlatform;
+  url: string;
 }
 
 export interface N8nWorkflow {
