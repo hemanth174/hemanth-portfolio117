@@ -324,7 +324,7 @@ export const HomeSection = () => {
                     {/* Background decorations — visible on all screens */}
                     <div aria-hidden="true" className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-yellow-400/20 blur-3xl dark:bg-yellow-300/10" />
                     <div aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-72 w-72 rounded-full bg-amber-500/10 blur-3xl dark:bg-yellow-300/[0.07]" />
-                    <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-40 dark:opacity-100 [background-image:linear-gradient(to_right,rgba(0,0,0,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.05)_1px,transparent_1px)] [background-size:44px_44px] dark:[background-image:linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)]" />
+                    <div aria-hidden="true" className="pointer-events-none absolute inset-0 [background-image:linear-gradient(to_right,rgba(0,0,0,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.04)_1px,transparent_1px)] [background-size:44px_44px] dark:[background-image:linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)]" />
                     {/* Ambient snakes wandering the grid */}
                     <GridSnake />
                     {/* Hover spotlight — golden glow + lit-up grid that follows the cursor */}

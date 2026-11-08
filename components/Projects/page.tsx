@@ -5,10 +5,6 @@ import { ExternalLink, Radio, RefreshCw, Workflow, FolderOpen } from 'lucide-rea
 import { transition } from '../Skills/page';
 import { trackProjectClick, trackWorkflowAction } from '@/lib/tracker';
 
-import projectImg1 from '@/app/Logo_main.png';
-import projectImg2 from '@/app/Img2.png';
-import projectImg3 from '@/app/Img3.png';
-import projectImg4 from '@/app/restaurant_demo.png';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

@@ -35,8 +35,6 @@ const quickNav = [
 ]
 
 export const Footer = () => {
-  const year = new Date().getFullYear()
-
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -67,9 +65,9 @@ export const Footer = () => {
           OPEN TO INTERNSHIPS · FREELANCE · COLLABORATION
         </p>
 
-        {/* Social icons — proper brand icons from react-icons, no inline SVG */}
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          {socialItems.map(({ label, href, Icon }) => (
+        {/* Social links overlap by half and expand on hover. */}
+        <div className="flex items-center justify-center py-2 pl-5">
+          {socialItems.map(({ label, href, Icon }, index) => (
             <a
               key={label}
               href={href}
@@ -77,10 +75,12 @@ export const Footer = () => {
               rel={label === 'Email' ? undefined : 'noopener noreferrer'}
               aria-label={`Connect on ${label}`}
               title={label}
-              className="group flex h-11 w-11 items-center justify-center rounded-full border border-yellow-500/70 dark:border-yellow-400/70 text-zinc-600 dark:text-zinc-300 transition-all duration-300 hover:-translate-y-1 hover:bg-yellow-400 dark:hover:bg-yellow-300 hover:text-black dark:hover:text-black hover:border-yellow-400 dark:hover:border-yellow-300 hover:shadow-[0_8px_24px_rgba(250,204,21,0.35)]"
+              className={`group relative z-0 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-yellow-500/70 dark:border-yellow-400/70 bg-zinc-50 dark:bg-black text-zinc-600 dark:text-zinc-300 transition-[width,transform,background-color,box-shadow] duration-300 hover:z-10 hover:w-32 hover:-translate-y-1 hover:bg-yellow-400 dark:hover:bg-yellow-300 hover:text-black dark:hover:text-black hover:border-yellow-400 dark:hover:border-yellow-300 hover:shadow-[0_8px_24px_rgba(250,204,21,0.35)] ${index > 0 ? '-ml-[22px]' : ''}`}
             >
               <Icon size={19} aria-hidden="true" />
-              <span className="sr-only">{label}</span>
+              <span className="max-w-0 overflow-hidden whitespace-nowrap text-xs font-bold opacity-0 transition-[max-width,opacity,margin] duration-300 group-hover:ml-2 group-hover:max-w-20 group-hover:opacity-100">
+                {label}
+              </span>
             </a>
           ))}
         </div>
@@ -98,17 +98,6 @@ export const Footer = () => {
           ))}
         </nav>
 
-        {/* Bottom bar */}
-        <div className="w-full border-t border-zinc-200 dark:border-zinc-900 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] tracking-widest text-zinc-500 dark:text-zinc-600">
-          <p>© {year} HEMANTH ATTHULURI · ALL RIGHTS RESERVED</p>
-          <p className="hidden sm:block">DESIGNED & BUILT WITH NEXT.JS</p>
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="cursor-pointer font-bold tracking-[0.25em] text-amber-600 dark:text-yellow-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
-          >
-            BACK TO TOP ↑
-          </button>
-        </div>
       </div>
     </footer>
   )

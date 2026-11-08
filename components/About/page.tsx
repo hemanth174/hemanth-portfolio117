@@ -14,11 +14,12 @@ export const About = () => {
                     <div className="w-full max-w-xs sm:max-w-sm md:max-w-md aspect-[4/5] overflow-hidden rounded-l-md border border-zinc-200 dark:border-zinc-900 bg-zinc-200 dark:bg-zinc-900">
                         <Image
                             className="block h-full w-full object-cover object-top"
-                            src="https://res.cloudinary.com/dqtlqvhw5/image/upload/v1790266465/557403ce-6b05-461f-9fb5-680269612c87_gbtoky.png"
+                            src="/professional-photo.jpeg"
                             alt="Portrait of Hemanth Atthuluri"
-                            width={800}
-                            height={1000}
+                            width={720}
+                            height={1280}
                             sizes="(max-width: 640px) 100vw, (max-width: 768px) 384px, 448px"
+                            quality={95}
                             priority
                         />
                     </div>

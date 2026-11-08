@@ -15,7 +15,9 @@ export function toggleThemeWithRipple(
     startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> };
   };
 
-  if (!doc.startViewTransition) {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!doc.startViewTransition || prefersReducedMotion) {
     setTheme(next);
     return;
   }
@@ -35,11 +37,11 @@ export function toggleThemeWithRipple(
           clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`],
         },
         {
-          duration: 650,
+          duration: 450,
           easing: 'ease-out',
+          fill: 'both',
           pseudoElement: '::view-transition-new(root)',
         },
       );
-    })
-    .catch(() => {});
+    }, () => undefined);
 }

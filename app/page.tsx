@@ -8,12 +8,14 @@ import { Contact } from "@/components/Contact/page";
 import { Footer } from "@/components/Footer/page";
 import { SiteChatbot } from "@/components/SiteChatbot/page";
 import { VisitorTracker } from "@/components/VisitorTracker";
+import { PortfolioHoverGrid } from "@/components/PortfolioHoverGrid";
 
 export default function Home() {
   return (
     <>
       <VisitorTracker />
       <SiteChatbot />
+      <PortfolioHoverGrid />
       <div id="section1" className="scroll-mt-0">
         <HomeSection />
       </div>
