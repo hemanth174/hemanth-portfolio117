@@ -1,8 +1,10 @@
 'use client';
 import React, { useState, useRef } from 'react';
 import { upload } from '@vercel/blob/client';
-import { Plus, Edit2, Trash2, Calendar, MapPin, Upload, RefreshCw, Film, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar, MapPin, Upload, RefreshCw, Film, X, LayoutGrid, Eye, EyeOff } from 'lucide-react';
 import { SocialLink, SocialPlatform, TimelineEvent } from './AdminTypes';
+import { EventLayoutPicker } from './EventLayoutPicker';
+import { DEFAULT_GALLERY_LAYOUT, normalizeGalleryLayout, type GalleryLayout } from '@/components/Events/eventLayout';
 
 interface ManageEventsTabProps {
   events: TimelineEvent[];
@@ -56,9 +58,12 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [mediaMessage, setMediaMessage] = useState('');
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
+  const [galleryLayout, setGalleryLayout] = useState<GalleryLayout>(DEFAULT_GALLERY_LAYOUT);
+  const [showLayoutEditor, setShowLayoutEditor] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const layoutSectionRef = useRef<HTMLDivElement>(null);
 
-  const handleStartEdit = (ev: TimelineEvent) => {
+  const handleStartEdit = (ev: TimelineEvent, focusLayout = false) => {
     setEditingEvent(ev);
     setTitle(ev.title || '');
     setType(ev.type || 'college');
@@ -78,7 +83,16 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
     setContributions(Array.isArray(ev.contributions) ? ev.contributions.join('\n') : '');
     setOutcomes(Array.isArray(ev.outcomes) ? ev.outcomes.join('\n') : '');
     setSocialLinks(Array.isArray(ev.socialLinks) ? ev.socialLinks : []);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setGalleryLayout(normalizeGalleryLayout(ev.galleryLayout));
+    setShowLayoutEditor(true);
+    if (focusLayout) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.setTimeout(() => {
+        layoutSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 120);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleCancelEdit = () => {
@@ -103,6 +117,8 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
     setSocialPlatform('instagram');
     setPendingMedia([]);
     setMediaMessage('');
+    setGalleryLayout(DEFAULT_GALLERY_LAYOUT);
+    setShowLayoutEditor(true);
   };
 
   const handleFile = (file: File) => {
@@ -176,6 +192,7 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
           contributions: contributions.split('\n').map((value) => value.trim()).filter(Boolean),
            outcomes: outcomes.split('\n').map((value) => value.trim()).filter(Boolean),
            socialLinks: socialLinks.filter((item) => item.url.trim()).map((item) => ({ ...item, url: item.url.trim() })),
+           galleryLayout,
         },
         !!editingEvent
       );
@@ -185,6 +202,11 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
       setIsUploadingMedia(false);
     }
   };
+
+  const savedGalleryImages = gallery.split('\n').map((value) => value.trim()).filter(Boolean);
+  const pendingGalleryImages = pendingMedia.filter((item) => item.file.type.startsWith('image/')).map((item) => item.previewUrl);
+  const layoutPreviewImages = [...savedGalleryImages, ...pendingGalleryImages];
+  if (layoutPreviewImages.length === 0 && image) layoutPreviewImages.push(image);
 
   return (
     <div className="space-y-8">
@@ -285,9 +307,43 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
               </div>
             </div>
 
+            <div ref={layoutSectionRef} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-mono text-[10px] font-bold tracking-widest text-amber-600 dark:text-yellow-300">STORY PAGE PREVIEW & LAYOUT</p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">This is exactly how the photo gallery will look on the public story page.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowLayoutEditor((current) => !current)}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 font-mono text-[9px] font-bold text-zinc-600 hover:border-yellow-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300"
+                >
+                  {showLayoutEditor ? <EyeOff size={11} /> : <Eye size={11} />}
+                  {showLayoutEditor ? 'HIDE' : editingEvent ? 'EDIT PREVIEW LAYOUT' : 'SET LAYOUT'}
+                </button>
+              </div>
+              {showLayoutEditor ? (
+                <div className="mt-3">
+                  <EventLayoutPicker
+                    images={layoutPreviewImages}
+                    layout={galleryLayout}
+                    onChange={setGalleryLayout}
+                    title={title || 'Event story'}
+                  />
+                  <p className="mt-3 rounded-lg bg-yellow-400/10 px-2.5 py-2 font-mono text-[9px] leading-relaxed text-amber-600 dark:text-yellow-300">
+                    <LayoutGrid size={11} className="mr-1 inline" />
+                    Layout is saved with this event. Editing later keeps your choice until you change it again.
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-3 font-mono text-[10px] text-zinc-400">Layout editing is hidden. Click “{editingEvent ? 'Edit preview layout' : 'Set layout'}” to open it.</p>
+              )}
+            </div>
+
             <div>
               <label className="block text-zinc-600 dark:text-zinc-400 font-bold mb-1.5 font-mono">
                 Event Type *
+
               </label>
               <select
                 value={type}
@@ -489,6 +545,9 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
                       <span className="absolute top-2 right-2 text-[9px] font-black uppercase font-mono px-2 py-0.5 rounded-full bg-yellow-400 text-black">
                         {ev.type === 'college' ? 'College' : 'External'}
                       </span>
+                      <span className="absolute top-2 left-2 rounded-full bg-black/70 px-2 py-0.5 font-mono text-[8px] font-bold uppercase tracking-wider text-white">
+                        {normalizeGalleryLayout(ev.galleryLayout).template}
+                      </span>
                     </div>
 
                     <h4 className="font-bold text-sm text-zinc-900 dark:text-white line-clamp-1 mb-1">
@@ -505,6 +564,13 @@ export const ManageEventsTab: React.FC<ManageEventsTabProps> = ({
                   </div>
 
                   <div className="flex items-center justify-end gap-1.5 pt-3 mt-3 border-t border-zinc-100 dark:border-zinc-900">
+                    <button
+                      onClick={() => handleStartEdit(ev, true)}
+                      className="p-1.5 rounded-lg text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-all"
+                      title="Edit preview layout"
+                    >
+                      <LayoutGrid size={13} />
+                    </button>
                     <button
                       onClick={() => handleStartEdit(ev)}
                       className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all"

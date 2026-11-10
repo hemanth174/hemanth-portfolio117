@@ -1,3 +1,5 @@
+import type { GalleryLayout } from '@/components/Events/eventLayout';
+
 export type AdminTab = 
   | 'overview'
   | 'project_perf'
@@ -163,6 +165,7 @@ export interface TimelineEvent {
   outcomes?: string[];
   projectUrl?: string;
   socialLinks?: SocialLink[];
+  galleryLayout?: GalleryLayout;
   createdAt?: string;
 }
 

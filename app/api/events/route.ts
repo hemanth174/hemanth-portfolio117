@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { revalidatePath } from 'next/cache';
 import { verifyAdminRequest } from '@/lib/auth';
+import { normalizeGalleryLayout } from '@/components/Events/eventLayout';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -286,6 +287,7 @@ export async function POST(request: NextRequest) {
       contributions,
       outcomes,
       socialLinks: eventSocialLinks,
+      galleryLayout: normalizeGalleryLayout(body.galleryLayout),
       createdAt: new Date(),
     };
 
@@ -409,7 +411,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid event ID format.' }, { status: 400 });
     }
 
-    const updateDoc = {
+    const updateDoc: Record<string, unknown> = {
       title,
       type,
       date,
@@ -427,6 +429,11 @@ export async function PUT(request: NextRequest) {
       outcomes,
       socialLinks: eventSocialLinks,
     };
+
+    // Preserve the saved gallery layout when an older client omits it.
+    if (body.galleryLayout !== undefined) {
+      updateDoc.galleryLayout = normalizeGalleryLayout(body.galleryLayout);
+    }
 
     const result = await db.collection('events').updateOne(
       { _id: objectId },
